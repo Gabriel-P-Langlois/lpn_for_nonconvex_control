@@ -1,19 +1,41 @@
-# Project: Learned Proximal Networks (LPNs) for Non-Convex Optimal Control
+# Original README file for: What's in a Prior? Learned Proximal Networks for Inverse Problems
 
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
-This is the nascent implementation document of our project on LPNs for non-convex optimal control. This work is based on the paper: [What's in a Prior? Learned Proximal Networks for Inverse Problems](https://openreview.net/pdf?id=kNPcOaqC5r) 
+This is the official implementation of the paper [What's in a Prior? Learned Proximal Networks for Inverse Problems](https://openreview.net/pdf?id=kNPcOaqC5r) @ [ICLR 2024](https://iclr.cc/Conferences/2024)
+
+by [Zhenghan Fang](https://zhenghanfang.github.io/), [Sam Buchanan](https://sdbuchanan.com/), and [Jeremias Sulam](https://sites.google.com/view/jsulam)
+
+[[`Paper`](https://openreview.net/pdf?id=kNPcOaqC5r)] [[`Project`](https://zhenghanfang.github.io/learned-proximal-networks/)] [[`Talk`](https://iclr.cc/virtual/2024/poster/17978)] [[`Slides`](https://slides.com/zhenghanfang/iclr2024/fullscreen)] [[`Poster`](https://iclr.cc/media/PosterPDFs/ICLR%202024/17978.png?t=1714588084.3620567)] [[`BibTeX`](#references)]
 
 --------------------
 
-## Purpose
-This project aims to apply LPNs to solve a broad class of non-convex Hamilton--Jacobi PDEs for optimal control. 
+<img src="assets/method_overview_2.png" width="85%">
 
-- This Github repo was forked from the Sulam-Group on Github.
+We propose *learned proximal networks* (LPN), a new class of deep neural networks that *exactly implement the proximal operator* of a general learned function. Such an LPN implicitly learns a regularization function for inverse problems that can be characterized and evaluated, shedding light onto what has been learned from data and improving the interpretability of learning-based solutions. In turn, we present a new training problem, dubbed *proximal matching*, that provably promotes the recovery of the correct regularization term (i.e., the log of the data distribution). Moreover, we show convergence for PnP reconstruction algorithms using LPN with minimal and verifiable assumptions.
 
-- This README file is in construction and will be updated as the project moves forward.
 
-- Provided below is a set of instructions to install the LPN package and run the examples contained in the original Repo of the Sulam-Group.
+
+- Laplacian example: the proximal operator $f_\theta$ and log-prior $R_\theta$ learned by LPN for the Laplacian distribution, trained via the $\ell_2$, $\ell_1$, or proximal matching ($\mathcal{L}_{PM}$) loss.
+
+<img src="assets/laplacian_compact.png" width="85%">
+<!-- ![Learning Laplacian](assets/laplacian_compact.png) -->
+
+- Deblurring on CelebA, $\sigma_{blur}=1.0$, $\sigma_{noise}=0.02$
+
+<img src="assets/blur=1.0_noise=0.02.png" width="90%"/>
+
+- Deblurring on CelebA, $\sigma_{blur}=1.0$, $\sigma_{noise}=0.04$
+
+<img src="assets/blur=1.0_noise=0.04.png" width="90%"/>
+
+- Sparse-view tomographic reconstruction on MayoCT
+
+<img src="assets/tomo.png" width="75%"/>
+
+- Compressed sensing on MayoCT (compression rate = 1/16)
+
+<img src="assets/cs_measurements_16384.png" width="75%"/>
 
 
 ## Installation
@@ -224,13 +246,17 @@ bash exps/mayoct/test_cs.sh
 
 All checkpoints are provided in this [Google drive](https://drive.google.com/drive/folders/1qtOra7EDas8gDXGHMsCfSjjIqdvnnb5E?usp=sharing).
 
+## Acknowledgements
+
+- [scico](https://github.com/lanl/scico)
+- [Prox-PnP](https://github.com/samuro95/Prox-PnP)
+- [unrolling_meets_data_driven_regularization](https://github.com/Subhadip-1/unrolling_meets_data_driven_regularization)
+- [odl](https://odlgroup.github.io/odl/)
 
 
-## Notes and References
+## References
 
-- Additional notes will be written here. See also the joint Overleaf Document shared between Gabriel and Akwum.
-
-The citation below is for the original LPN paper
+If you find the code useful, please consider citing
 ```bib
 @inproceedings{
     fang2024whats,
