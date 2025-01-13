@@ -41,6 +41,7 @@ class LPN(nn.Module):
             for core in self.lin[1:]:
                 core.weight.data.clamp_(0)
 
+    # Note: We pass the input of the LPN model as the x variable below.
     def forward(self, x):
         with torch.enable_grad():
             if not x.requires_grad:
