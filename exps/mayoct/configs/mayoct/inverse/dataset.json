@@ -1,8 +1,0 @@
-{
-    "dataset": "mayoct",
-    "root": "data/mayoct/",
-    "split": "test",
-    "squeeze": true,
-    "start_idx": 0,
-    "num_imgs": 128
-}

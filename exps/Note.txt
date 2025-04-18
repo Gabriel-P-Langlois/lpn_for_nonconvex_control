@@ -1,2 +1,0 @@
-The functions in utils.py are slightly different from those in
-_hjpdes_exepriments_1D. The former are generalized to the multidimensional setting.

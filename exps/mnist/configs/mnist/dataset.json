@@ -1,6 +1,0 @@
-{
-    "dataset": "mnist",
-    "params": {
-        "root": "data/mnist/"
-    }
-}

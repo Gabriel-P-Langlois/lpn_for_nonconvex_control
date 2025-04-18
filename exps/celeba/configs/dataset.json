@@ -1,7 +1,0 @@
-{
-    "dataset": "celeba",
-    "params": {
-        "root": "data/celeba/",
-        "image_size": 128
-    }
-}
