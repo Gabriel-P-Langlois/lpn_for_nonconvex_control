@@ -19,7 +19,9 @@ class LPN(nn.Module):
         self.res = nn.ModuleList(
             [*[nn.Linear(in_dim, hidden) for _ in range(layers)], nn.Linear(in_dim, 1)]
         )
-        self.act = nn.Softplus(beta=beta)
+        #self.act = nn.Softplus(beta=beta)
+        #self.act = nn.ReLU()  # Using ReLU activation for better performance in many case
+        self.act = nn.Mish() # Other activations ReLU, Mish,Softmax() better performance in many case
 
     def scalar(self, x):
         y = x.clone()
