@@ -21,7 +21,7 @@ class LPN(nn.Module):
         )
         #self.act = nn.Softplus(beta=beta)
         #self.act = nn.ReLU()  # Using ReLU activation for better performance in many case
-        self.act = nn.LeakyReLU(beta = beta) # Other activations ReLU, Mish,Softmax() better performance in many case
+        self.act = nn.Mish() # Other activations ReLU, Mish,Softmax() better performance in many case
 
     def scalar(self, x):
         y = x.clone()
