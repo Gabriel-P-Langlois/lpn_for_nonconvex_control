@@ -2,9 +2,27 @@
 import torch
 import torch.nn as nn
 
+class SmoothedReLU(nn.Module):
+    def __init__(self, eps):
+        super(SmoothedReLU,self).__init__()
+        self.eps = eps
+
+    def forward(self, x):
+        eps = self.eps
+        # Use torch operations for broadcasting and gradients
+        out = torch.where(
+            x > eps,
+            x,
+            torch.where(
+                x < -eps,
+                torch.zeros_like(x),
+                (1 / (4 * eps)) * x**2 + (1 / 2) * x + (eps / 4)
+            )
+        )
+        return out
 
 class LPN(nn.Module):
-    def __init__(self, in_dim, hidden, layers=1, beta=1):
+    def __init__(self, in_dim, hidden, layers=1, beta=1,eps=1):
         super().__init__()
 
         self.hidden = hidden
@@ -20,8 +38,9 @@ class LPN(nn.Module):
             [*[nn.Linear(in_dim, hidden) for _ in range(layers)], nn.Linear(in_dim, 1)]
         )
         #self.act = nn.Softplus(beta=beta)
-        #self.act = nn.ReLU()  # Using ReLU activation for better performance in many case
-        self.act = nn.Mish() # Other activations ReLU, Mish,Softmax() better performance in many case
+        #self.act = nn.ReLU() # Using ReLU activation for better performance in many case
+        #self.act = nn.Mish() # Other activations ReLU, Mish,Softmax() better performance in many case
+        self.act = SmoothedReLU(eps=eps) # Using a smoothed ReLU for better numerical stability
 
     def scalar(self, x):
         y = x.clone()
