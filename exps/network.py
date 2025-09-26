@@ -30,7 +30,7 @@ class LPN(nn.Module):
             [
                 nn.Linear(in_dim, hidden, bias=False),
                 *[nn.Linear(hidden, hidden, bias=False) for _ in range(layers)],
-                nn.Linear(hidden, 1, bias=False),
+                nn.Linear(hidden, 1, bias=False), 
             ]
         )
 
@@ -39,16 +39,20 @@ class LPN(nn.Module):
         )
         #self.act = nn.Softplus(beta=beta)
         #self.act = nn.ReLU() # Using ReLU activation for better performance in many case
-        #self.act = nn.Mish() # Other activations ReLU, Mish,Softmax() better performance in many case
-        self.act = SmoothedReLU(eps=eps) # Using a smoothed ReLU for better numerical stability
+        self.act = nn.Mish() # Other activations ReLU, Mish,Softmax() better performance in many case
+        #self.act = SmoothedReLU(eps=eps) # Using a smoothed ReLU for better numerical stability
 
+    
     def scalar(self, x):
         y = x.clone()
         y = self.act(self.lin[0](y))
         for core, res in zip(self.lin[1:-1], self.res[:-1]):
             y = self.act(core(y) + res(x))
 
+
         y = self.lin[-1](y) + self.res[-1](x)
+        #y, _ = torch.max(y, dim=1, keepdim=True)
+        #y = y + self.res[-1](x)
         return y
 
     def init_weights(self, mean, std):
