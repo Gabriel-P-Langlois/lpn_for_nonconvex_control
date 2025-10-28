@@ -1,0 +1,16 @@
+#!/bin/bash
+#SBATCH --job-name=test_env
+#SBATCH --output=test_env_%j.out
+#SBATCH --error=test_env_%j.err
+#SBATCH --gres=gpu:1
+#SBATCH --mem=10G
+#SBATCH --time=00:10:00
+
+module purge
+module load cuda-toolkit/11.3
+
+eval "$(mamba shell hook --shell bash)"
+mamba activate /project/mang/users/andreas/mamba/mamba_envs/env_lpn/lpn_env
+
+cd /project/mang/users/tosin/GLP/lpn_for_nonconvex_control
+python3 test_environment.py
