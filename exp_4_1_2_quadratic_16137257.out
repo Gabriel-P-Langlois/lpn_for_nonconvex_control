@@ -1,0 +1,11 @@
+Running on host: compute-0-39
+CUDA_VISIBLE_DEVICES=0
+Working directory: /project/mang/users/tosin/GLP/lpn_for_nonconvex_control
+--- Starting Notebook Execution ---
+Executing notebook: exp_4_1_2_quadratic_16D copy.ipynb
+ERROR executing exp_4_1_2_quadratic_16D copy.ipynb. Exiting script.
+-----------------------------------
+Executing notebook: exp_4_1_2_quadratic_32D.ipynb
+Successfully executed exp_4_1_2_quadratic_32D.ipynb
+-----------------------------------
+Executing notebook: exp_4_1_2_quadratic_64D.ipynb
