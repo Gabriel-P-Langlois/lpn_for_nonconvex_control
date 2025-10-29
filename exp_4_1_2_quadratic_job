@@ -1,7 +1,7 @@
 #!/bin/bash
-#SBATCH --job-name=exp_minplus
-#SBATCH --output=exp_minplus_%j.out
-#SBATCH --error=exp_minplus_%j.err
+#SBATCH --job-name=exp_4_1_2_quadratic
+#SBATCH --output=exp_4_1_2_quadratic_%j.out
+#SBATCH --error=exp_4_1_2_quadratic_%j.err
 #SBATCH --gres=gpu:1
 #SBATCH --mem=10G  # Increased memory
 #SBATCH --time=6:00:00  # Increased time
@@ -32,12 +32,14 @@ NOTEBOOK_DIR="${PROJECT_ROOT}/exps"
 
 # --- List of notebooks to execute ---
 NOTEBOOKS=(
-    "exp_1_minplus_2D.ipynb"
-    "exp_1_minplus_4D.ipynb"
-    "exp_1_minplus_8D.ipynb"
-    "exp_1_minplus_16D.ipynb"
-    "exp_1_minplus_32D.ipynb"
-    "exp_1_minplus_64D.ipynb"
+    "exp_4_1_2_quadratic_2D.ipynb"
+    "exp_4_1_2_quadratic_4D.ipynb"
+    "exp_4_1_2_quadratic_8D.ipynb"
+    "exp_4_1_2_quadratic_16D.ipynb"
+    "exp_4_1_2_quadratic_32D.ipynb"
+    "exp_4_1_2_quadratic_64D.ipynb"
+    "exp_4_1_2_quadratic_16D copy.ipynb"
+
 )
 
 # --- Run all notebooks ---
@@ -45,7 +47,7 @@ echo "--- Starting Notebook Execution ---"
 
 for notebook in "${NOTEBOOKS[@]}"; do
     echo "Executing notebook: ${notebook}"
-    
+
     # Run the notebook, execute all cells, and overwrite the file in place.
     # The --allow-errors flag is useful if you expect some cells to fail 
     # but still want to continue to the next cells/notebook.
@@ -54,7 +56,7 @@ for notebook in "${NOTEBOOKS[@]}"; do
         --ExecutePreprocessor.kernel_name='python3' \
         --ExecutePreprocessor.timeout=7200 \
         "${NOTEBOOK_DIR}/${notebook}"
-    
+
     # Check the exit status of jupyter nbconvert
     if [ $? -eq 0 ]; then
         echo "Successfully executed ${notebook}"

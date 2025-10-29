@@ -1,10 +1,10 @@
 #!/bin/bash
-#SBATCH --job-name=exp_minplus
-#SBATCH --output=exp_minplus_%j.out
-#SBATCH --error=exp_minplus_%j.err
+#SBATCH --job-name=exp_quadratic_concave_prior
+#SBATCH --output=exp_quadratic_concave_prior_%j.out
+#SBATCH --error=exp_quadratic_concave_prior_%j.err
 #SBATCH --gres=gpu:1
-#SBATCH --mem=10G  # Increased memory
-#SBATCH --time=6:00:00  # Increased time
+#SBATCH --mem=20G  # Increased memory
+#SBATCH --time=16:00:00  # Increased time
 #SBATCH --cpus-per-task=4
 #SBATCH --mail-user=oaa323@lehigh.edu
 #SBATCH --mail-type=end
@@ -32,12 +32,18 @@ NOTEBOOK_DIR="${PROJECT_ROOT}/exps"
 
 # --- List of notebooks to execute ---
 NOTEBOOKS=(
-    "exp_1_minplus_2D.ipynb"
-    "exp_1_minplus_4D.ipynb"
-    "exp_1_minplus_8D.ipynb"
-    "exp_1_minplus_16D.ipynb"
-    "exp_1_minplus_32D.ipynb"
-    "exp_1_minplus_64D.ipynb"
+    "exp_quadratic_concave_prior_MC_2D.ipynb"
+    "exp_quadratic_concave_prior_MC_4D.ipynb"
+    "exp_quadratic_concave_prior_MC_8D.ipynb"
+    "exp_quadratic_concave_prior_MC_16D.ipynb"
+    "exp_quadratic_concave_prior_MC_32D.ipynb"
+    "exp_quadratic_concave_prior_MC_64D.ipynb"
+    "exp_quadratic_concave_prior_2D.ipynb"
+    "exp_quadratic_concave_prior_4D.ipynb"
+    "exp_quadratic_concave_prior_8D.ipynb"
+    "exp_quadratic_concave_prior_16D.ipynb"
+    "exp_quadratic_concave_prior_32D.ipynb"
+    "exp_quadratic_concave_prior_64D.ipynb"
 )
 
 # --- Run all notebooks ---

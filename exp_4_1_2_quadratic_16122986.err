@@ -1,0 +1,10 @@
+[NbConvertApp] Converting notebook /project/mang/users/tosin/GLP/lpn_for_nonconvex_control/exps/exp_4_1_2_quadratic_2D.ipynb to notebook
+[NbConvertApp] Writing 631350 bytes to /project/mang/users/tosin/GLP/lpn_for_nonconvex_control/exps/exp_4_1_2_quadratic_2D.ipynb
+[NbConvertApp] Converting notebook /project/mang/users/tosin/GLP/lpn_for_nonconvex_control/exps/exp_4_1_2_quadratic_4D.ipynb to notebook
+[NbConvertApp] Writing 673406 bytes to /project/mang/users/tosin/GLP/lpn_for_nonconvex_control/exps/exp_4_1_2_quadratic_4D.ipynb
+[NbConvertApp] Converting notebook /project/mang/users/tosin/GLP/lpn_for_nonconvex_control/exps/exp_4_1_2_quadratic_8D.ipynb to notebook
+[NbConvertApp] Writing 678089 bytes to /project/mang/users/tosin/GLP/lpn_for_nonconvex_control/exps/exp_4_1_2_quadratic_8D.ipynb
+[NbConvertApp] Converting notebook /project/mang/users/tosin/GLP/lpn_for_nonconvex_control/exps/exp_4_1_2_quadratic_16D.ipynb to notebook
+[NbConvertApp] Writing 653757 bytes to /project/mang/users/tosin/GLP/lpn_for_nonconvex_control/exps/exp_4_1_2_quadratic_16D.ipynb
+[NbConvertApp] Converting notebook /project/mang/users/tosin/GLP/lpn_for_nonconvex_control/exps/exp_4_1_2_quadratic_32D.ipynb to notebook
+slurmstepd: error: *** JOB 16122986 ON compute-0-38 CANCELLED AT 2025-10-28T22:53:18 DUE TO TIME LIMIT ***
