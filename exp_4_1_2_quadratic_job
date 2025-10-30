@@ -32,10 +32,10 @@ NOTEBOOK_DIR="${PROJECT_ROOT}/exps"
 
 # --- List of notebooks to execute ---
 NOTEBOOKS=(
-    #"exp_4_1_2_quadratic_2D.ipynb"
-    #"exp_4_1_2_quadratic_4D.ipynb"
-    #"exp_4_1_2_quadratic_8D.ipynb"
-    #"exp_4_1_2_quadratic_16D.ipynb"
+    "exp_4_1_2_quadratic_2D.ipynb"
+    "exp_4_1_2_quadratic_4D.ipynb"
+    "exp_4_1_2_quadratic_8D.ipynb"
+    "exp_4_1_2_quadratic_16D.ipynb"
     "exp_4_1_2_quadratic_16D copy.ipynb"
     "exp_4_1_2_quadratic_32D.ipynb"
     "exp_4_1_2_quadratic_64D.ipynb"
