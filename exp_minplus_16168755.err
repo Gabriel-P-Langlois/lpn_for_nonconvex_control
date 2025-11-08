@@ -9,4 +9,4 @@
 [NbConvertApp] Converting notebook /project/mang/users/tosin/GLP/lpn_for_nonconvex_control/exps/exp_1_minplus_32D.ipynb to notebook
 [NbConvertApp] Writing 367843 bytes to /project/mang/users/tosin/GLP/lpn_for_nonconvex_control/exps/exp_1_minplus_32D.ipynb
 [NbConvertApp] Converting notebook /project/mang/users/tosin/GLP/lpn_for_nonconvex_control/exps/exp_1_minplus_64D.ipynb to notebook
-slurmstepd: error: *** JOB 16140970 ON compute-0-39 CANCELLED AT 2025-10-30T00:36:59 DUE TO TIME LIMIT ***
+slurmstepd: error: *** JOB 16168755 ON compute-0-37 CANCELLED AT 2025-11-02T21:50:24 DUE TO TIME LIMIT ***

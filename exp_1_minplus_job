@@ -3,8 +3,8 @@
 #SBATCH --output=exp_minplus_%j.out
 #SBATCH --error=exp_minplus_%j.err
 #SBATCH --gres=gpu:1
-#SBATCH --mem=10G  # Increased memory
-#SBATCH --time=6:00:00  # Increased time
+#SBATCH --mem=5G  # Increased memory
+#SBATCH --time=8:00:00  # Increased time
 #SBATCH --cpus-per-task=4
 #SBATCH --mail-user=oaa323@lehigh.edu
 #SBATCH --mail-type=end

@@ -1,4 +1,4 @@
-Running on host: compute-0-39
+Running on host: compute-0-37
 CUDA_VISIBLE_DEVICES=0
 Working directory: /project/mang/users/tosin/GLP/lpn_for_nonconvex_control
 --- Starting Notebook Execution ---
