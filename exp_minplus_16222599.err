@@ -1,0 +1,184 @@
+[NbConvertApp] Converting notebook /project/mang/users/tosin/GLP/lpn_for_nonconvex_control/exps/exp_1_minplus_32D.ipynb to notebook
+[NbConvertApp] ERROR | Timeout waiting for execute reply (7200s).
+Traceback (most recent call last):
+  File "/project/mang/users/andreas/mamba/mamba_envs/env_lpn/lpn_env/lib/python3.13/site-packages/jupyter_core/utils/__init__.py", line 154, in wrapped
+    asyncio.get_running_loop()
+    ~~~~~~~~~~~~~~~~~~~~~~~~^^
+RuntimeError: no running event loop
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/project/mang/users/andreas/mamba/mamba_envs/env_lpn/lpn_env/bin/jupyter-nbconvert", line 10, in <module>
+    sys.exit(main())
+             ~~~~^^
+  File "/project/mang/users/andreas/mamba/mamba_envs/env_lpn/lpn_env/lib/python3.13/site-packages/jupyter_core/application.py", line 284, in launch_instance
+    super().launch_instance(argv=argv, **kwargs)
+    ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+  File "/project/mang/users/andreas/mamba/mamba_envs/env_lpn/lpn_env/lib/python3.13/site-packages/traitlets/config/application.py", line 1075, in launch_instance
+    app.start()
+    ~~~~~~~~~^^
+  File "/project/mang/users/andreas/mamba/mamba_envs/env_lpn/lpn_env/lib/python3.13/site-packages/nbconvert/nbconvertapp.py", line 420, in start
+    self.convert_notebooks()
+    ~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/project/mang/users/andreas/mamba/mamba_envs/env_lpn/lpn_env/lib/python3.13/site-packages/nbconvert/nbconvertapp.py", line 597, in convert_notebooks
+    self.convert_single_notebook(notebook_filename)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+  File "/project/mang/users/andreas/mamba/mamba_envs/env_lpn/lpn_env/lib/python3.13/site-packages/nbconvert/nbconvertapp.py", line 563, in convert_single_notebook
+    output, resources = self.export_single_notebook(
+                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        notebook_filename, resources, input_buffer=input_buffer
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/project/mang/users/andreas/mamba/mamba_envs/env_lpn/lpn_env/lib/python3.13/site-packages/nbconvert/nbconvertapp.py", line 487, in export_single_notebook
+    output, resources = self.exporter.from_filename(
+                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        notebook_filename, resources=resources
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/project/mang/users/andreas/mamba/mamba_envs/env_lpn/lpn_env/lib/python3.13/site-packages/nbconvert/exporters/exporter.py", line 201, in from_filename
+    return self.from_file(f, resources=resources, **kw)
+           ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/project/mang/users/andreas/mamba/mamba_envs/env_lpn/lpn_env/lib/python3.13/site-packages/nbconvert/exporters/exporter.py", line 220, in from_file
+    return self.from_notebook_node(
+           ~~~~~~~~~~~~~~~~~~~~~~~^
+        nbformat.read(file_stream, as_version=4), resources=resources, **kw
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/project/mang/users/andreas/mamba/mamba_envs/env_lpn/lpn_env/lib/python3.13/site-packages/nbconvert/exporters/notebook.py", line 36, in from_notebook_node
+    nb_copy, resources = super().from_notebook_node(nb, resources, **kw)
+                         ~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+  File "/project/mang/users/andreas/mamba/mamba_envs/env_lpn/lpn_env/lib/python3.13/site-packages/nbconvert/exporters/exporter.py", line 154, in from_notebook_node
+    nb_copy, resources = self._preprocess(nb_copy, resources)
+                         ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "/project/mang/users/andreas/mamba/mamba_envs/env_lpn/lpn_env/lib/python3.13/site-packages/nbconvert/exporters/exporter.py", line 353, in _preprocess
+    nbc, resc = preprocessor(nbc, resc)
+                ~~~~~~~~~~~~^^^^^^^^^^^
+  File "/project/mang/users/andreas/mamba/mamba_envs/env_lpn/lpn_env/lib/python3.13/site-packages/nbconvert/preprocessors/base.py", line 48, in __call__
+    return self.preprocess(nb, resources)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "/project/mang/users/andreas/mamba/mamba_envs/env_lpn/lpn_env/lib/python3.13/site-packages/nbconvert/preprocessors/execute.py", line 103, in preprocess
+    self.preprocess_cell(cell, resources, index)
+    ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/project/mang/users/andreas/mamba/mamba_envs/env_lpn/lpn_env/lib/python3.13/site-packages/nbconvert/preprocessors/execute.py", line 124, in preprocess_cell
+    cell = self.execute_cell(cell, index, store_history=True)
+  File "/project/mang/users/andreas/mamba/mamba_envs/env_lpn/lpn_env/lib/python3.13/site-packages/jupyter_core/utils/__init__.py", line 158, in wrapped
+    return loop.run_until_complete(inner)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^
+  File "/project/mang/users/andreas/mamba/mamba_envs/env_lpn/lpn_env/lib/python3.13/asyncio/base_events.py", line 725, in run_until_complete
+    return future.result()
+           ~~~~~~~~~~~~~^^
+  File "/project/mang/users/andreas/mamba/mamba_envs/env_lpn/lpn_env/lib/python3.13/site-packages/nbclient/client.py", line 1005, in async_execute_cell
+    exec_reply = await self.task_poll_for_reply
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/project/mang/users/andreas/mamba/mamba_envs/env_lpn/lpn_env/lib/python3.13/site-packages/nbclient/client.py", line 806, in _async_poll_for_reply
+    error_on_timeout_execute_reply = await self._async_handle_timeout(timeout, cell)
+                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/project/mang/users/andreas/mamba/mamba_envs/env_lpn/lpn_env/lib/python3.13/site-packages/nbclient/client.py", line 856, in _async_handle_timeout
+    raise CellTimeoutError.error_from_timeout_and_cell(
+        "Cell execution timed out", timeout, cell
+    )
+nbclient.exceptions.CellTimeoutError: A cell timed out while it was being executed, after 7200 seconds.
+The message was: Cell execution timed out.
+Here is a preview of the cell contents:
+-------------------
+['# initialize', 'lpn_model = LPN(in_dim=dim, hidden=hidden, layers=layers, beta=beta).to(device)', 'optimizer = torch.optim.Adam(lpn_model.parameters(), lr=1e-3)', '', 'for i in range(1):']
+...
+['    single_iteration(i, data_points, lpn_model, optimizer,input,cvx_samples,loss_type=2)', '', '', '# save the model', 'torch.save(lpn_model.state_dict(), os.path.join(MODEL_DIR, "l2.pth"))']
+-------------------
+
+[NbConvertApp] Converting notebook /project/mang/users/tosin/GLP/lpn_for_nonconvex_control/exps/exp_1_minplus_64D.ipynb to notebook
+[NbConvertApp] ERROR | Timeout waiting for execute reply (7200s).
+Traceback (most recent call last):
+  File "/project/mang/users/andreas/mamba/mamba_envs/env_lpn/lpn_env/lib/python3.13/site-packages/jupyter_core/utils/__init__.py", line 154, in wrapped
+    asyncio.get_running_loop()
+    ~~~~~~~~~~~~~~~~~~~~~~~~^^
+RuntimeError: no running event loop
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/project/mang/users/andreas/mamba/mamba_envs/env_lpn/lpn_env/bin/jupyter-nbconvert", line 10, in <module>
+    sys.exit(main())
+             ~~~~^^
+  File "/project/mang/users/andreas/mamba/mamba_envs/env_lpn/lpn_env/lib/python3.13/site-packages/jupyter_core/application.py", line 284, in launch_instance
+    super().launch_instance(argv=argv, **kwargs)
+    ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+  File "/project/mang/users/andreas/mamba/mamba_envs/env_lpn/lpn_env/lib/python3.13/site-packages/traitlets/config/application.py", line 1075, in launch_instance
+    app.start()
+    ~~~~~~~~~^^
+  File "/project/mang/users/andreas/mamba/mamba_envs/env_lpn/lpn_env/lib/python3.13/site-packages/nbconvert/nbconvertapp.py", line 420, in start
+    self.convert_notebooks()
+    ~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/project/mang/users/andreas/mamba/mamba_envs/env_lpn/lpn_env/lib/python3.13/site-packages/nbconvert/nbconvertapp.py", line 597, in convert_notebooks
+    self.convert_single_notebook(notebook_filename)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+  File "/project/mang/users/andreas/mamba/mamba_envs/env_lpn/lpn_env/lib/python3.13/site-packages/nbconvert/nbconvertapp.py", line 563, in convert_single_notebook
+    output, resources = self.export_single_notebook(
+                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        notebook_filename, resources, input_buffer=input_buffer
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/project/mang/users/andreas/mamba/mamba_envs/env_lpn/lpn_env/lib/python3.13/site-packages/nbconvert/nbconvertapp.py", line 487, in export_single_notebook
+    output, resources = self.exporter.from_filename(
+                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        notebook_filename, resources=resources
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/project/mang/users/andreas/mamba/mamba_envs/env_lpn/lpn_env/lib/python3.13/site-packages/nbconvert/exporters/exporter.py", line 201, in from_filename
+    return self.from_file(f, resources=resources, **kw)
+           ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/project/mang/users/andreas/mamba/mamba_envs/env_lpn/lpn_env/lib/python3.13/site-packages/nbconvert/exporters/exporter.py", line 220, in from_file
+    return self.from_notebook_node(
+           ~~~~~~~~~~~~~~~~~~~~~~~^
+        nbformat.read(file_stream, as_version=4), resources=resources, **kw
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/project/mang/users/andreas/mamba/mamba_envs/env_lpn/lpn_env/lib/python3.13/site-packages/nbconvert/exporters/notebook.py", line 36, in from_notebook_node
+    nb_copy, resources = super().from_notebook_node(nb, resources, **kw)
+                         ~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+  File "/project/mang/users/andreas/mamba/mamba_envs/env_lpn/lpn_env/lib/python3.13/site-packages/nbconvert/exporters/exporter.py", line 154, in from_notebook_node
+    nb_copy, resources = self._preprocess(nb_copy, resources)
+                         ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "/project/mang/users/andreas/mamba/mamba_envs/env_lpn/lpn_env/lib/python3.13/site-packages/nbconvert/exporters/exporter.py", line 353, in _preprocess
+    nbc, resc = preprocessor(nbc, resc)
+                ~~~~~~~~~~~~^^^^^^^^^^^
+  File "/project/mang/users/andreas/mamba/mamba_envs/env_lpn/lpn_env/lib/python3.13/site-packages/nbconvert/preprocessors/base.py", line 48, in __call__
+    return self.preprocess(nb, resources)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "/project/mang/users/andreas/mamba/mamba_envs/env_lpn/lpn_env/lib/python3.13/site-packages/nbconvert/preprocessors/execute.py", line 103, in preprocess
+    self.preprocess_cell(cell, resources, index)
+    ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/project/mang/users/andreas/mamba/mamba_envs/env_lpn/lpn_env/lib/python3.13/site-packages/nbconvert/preprocessors/execute.py", line 124, in preprocess_cell
+    cell = self.execute_cell(cell, index, store_history=True)
+  File "/project/mang/users/andreas/mamba/mamba_envs/env_lpn/lpn_env/lib/python3.13/site-packages/jupyter_core/utils/__init__.py", line 158, in wrapped
+    return loop.run_until_complete(inner)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^
+  File "/project/mang/users/andreas/mamba/mamba_envs/env_lpn/lpn_env/lib/python3.13/asyncio/base_events.py", line 725, in run_until_complete
+    return future.result()
+           ~~~~~~~~~~~~~^^
+  File "/project/mang/users/andreas/mamba/mamba_envs/env_lpn/lpn_env/lib/python3.13/site-packages/nbclient/client.py", line 1005, in async_execute_cell
+    exec_reply = await self.task_poll_for_reply
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/project/mang/users/andreas/mamba/mamba_envs/env_lpn/lpn_env/lib/python3.13/site-packages/nbclient/client.py", line 806, in _async_poll_for_reply
+    error_on_timeout_execute_reply = await self._async_handle_timeout(timeout, cell)
+                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/project/mang/users/andreas/mamba/mamba_envs/env_lpn/lpn_env/lib/python3.13/site-packages/nbclient/client.py", line 856, in _async_handle_timeout
+    raise CellTimeoutError.error_from_timeout_and_cell(
+        "Cell execution timed out", timeout, cell
+    )
+nbclient.exceptions.CellTimeoutError: A cell timed out while it was being executed, after 7200 seconds.
+The message was: Cell execution timed out.
+Here is a preview of the cell contents:
+-------------------
+['# initialize', 'lpn_model = LPN(in_dim=dim, hidden=hidden, layers=layers, beta=beta).to(device)', 'optimizer = torch.optim.Adam(lpn_model.parameters(), lr=1e-3)', '', 'for i in range(1):']
+...
+['    single_iteration(i, data_points, lpn_model, optimizer,input,cvx_samples,loss_type=2)', '', '', '# save the model', 'torch.save(lpn_model.state_dict(), os.path.join(MODEL_DIR, "l2.pth"))']
+-------------------
+
