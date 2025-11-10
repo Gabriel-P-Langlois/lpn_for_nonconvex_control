@@ -1,0 +1,11 @@
+Running on host: compute-0-37
+CUDA_VISIBLE_DEVICES=0
+Working directory: /project/mang/users/tosin/GLP/lpn_for_nonconvex_control
+--- Starting Notebook Execution ---
+Executing notebook: exp_1_minplus_32D.ipynb
+ERROR executing exp_1_minplus_32D.ipynb. Exiting script.
+-----------------------------------
+Executing notebook: exp_1_minplus_64D.ipynb
+ERROR executing exp_1_minplus_64D.ipynb. Exiting script.
+-----------------------------------
+--- All notebooks execution complete. ---
