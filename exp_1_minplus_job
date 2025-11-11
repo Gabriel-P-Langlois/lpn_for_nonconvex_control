@@ -3,8 +3,8 @@
 #SBATCH --output=exp_minplus_%j.out
 #SBATCH --error=exp_minplus_%j.err
 #SBATCH --gres=gpu:1
-#SBATCH --mem=8G  # Increased memory
-#SBATCH --time=8:00:00  # Increased time
+#SBATCH --mem=16G  # Increased memory
+#SBATCH --time=24:00:00  # Increased time
 #SBATCH --cpus-per-task=4
 #SBATCH --mail-user=oaa323@lehigh.edu
 #SBATCH --mail-type=end
@@ -34,11 +34,7 @@ NOTEBOOK_DIR="${PROJECT_ROOT}/exps"
 NOTEBOOKS=(
     "exp_1_minplus_32D.ipynb"
     "exp_1_minplus_64D.ipynb"
-    #"exp_1_minplus_8D.ipynb"
-    #"exp_1_minplus_16D.ipynb"
-    #"exp_1_minplus_32D.ipynb"
-    #"exp_1_minplus_64D.ipynb"
-)
+    )
 
 # --- Run all notebooks ---
 echo "--- Starting Notebook Execution ---"
@@ -52,7 +48,7 @@ for notebook in "${NOTEBOOKS[@]}"; do
     jupyter nbconvert --to notebook --execute \
         --inplace \
         --ExecutePreprocessor.kernel_name='python3' \
-        --ExecutePreprocessor.timeout=7200 \
+        --ExecutePreprocessor.timeout=21600 \
         "${NOTEBOOK_DIR}/${notebook}"
     
     # Check the exit status of jupyter nbconvert
