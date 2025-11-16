@@ -32,17 +32,17 @@ NOTEBOOK_DIR="${PROJECT_ROOT}/exps"
 
 # --- List of notebooks to execute ---
 NOTEBOOKS=(
-    "exp_quadratic_concave_prior_MC_2D.ipynb"
-    "exp_quadratic_concave_prior_MC_4D.ipynb"
-    "exp_quadratic_concave_prior_MC_8D.ipynb"
-    "exp_quadratic_concave_prior_MC_16D.ipynb"
-    "exp_quadratic_concave_prior_MC_32D.ipynb"
-    "exp_quadratic_concave_prior_MC_64D.ipynb"
-    "exp_quadratic_concave_prior_2D.ipynb"
-    "exp_quadratic_concave_prior_4D.ipynb"
-    "exp_quadratic_concave_prior_8D.ipynb"
+    #"exp_quadratic_concave_prior_MC_2D.ipynb"
+    #"exp_quadratic_concave_prior_MC_4D.ipynb"
+    #"exp_quadratic_concave_prior_MC_8D.ipynb"
+    #"exp_quadratic_concave_prior_MC_16D.ipynb"
+    #"exp_quadratic_concave_prior_MC_32D.ipynb"
+    #"exp_quadratic_concave_prior_MC_64D.ipynb"
+    #"exp_quadratic_concave_prior_2D.ipynb"
+    #"exp_quadratic_concave_prior_4D.ipynb"
+    #"exp_quadratic_concave_prior_8D.ipynb"
     "exp_quadratic_concave_prior_16D.ipynb"
-    "exp_quadratic_concave_prior_32D.ipynb"
+    #"exp_quadratic_concave_prior_32D.ipynb"
     "exp_quadratic_concave_prior_64D.ipynb"
 )
 
