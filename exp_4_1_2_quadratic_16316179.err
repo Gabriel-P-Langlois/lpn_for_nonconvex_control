@@ -1,0 +1,74 @@
+[NbConvertApp] Converting notebook /project/mang/users/tosin/GLP/lpn_for_nonconvex_control/exps/exp_4_1_2_quadratic_2D.ipynb to notebook
+[NbConvertApp] Writing 534432 bytes to /project/mang/users/tosin/GLP/lpn_for_nonconvex_control/exps/exp_4_1_2_quadratic_2D.ipynb
+[NbConvertApp] Converting notebook /project/mang/users/tosin/GLP/lpn_for_nonconvex_control/exps/exp_4_1_2_quadratic_4D.ipynb to notebook
+[NbConvertApp] Writing 587884 bytes to /project/mang/users/tosin/GLP/lpn_for_nonconvex_control/exps/exp_4_1_2_quadratic_4D.ipynb
+[NbConvertApp] Converting notebook /project/mang/users/tosin/GLP/lpn_for_nonconvex_control/exps/exp_4_1_2_quadratic_8D.ipynb to notebook
+[NbConvertApp] Writing 595867 bytes to /project/mang/users/tosin/GLP/lpn_for_nonconvex_control/exps/exp_4_1_2_quadratic_8D.ipynb
+[NbConvertApp] Converting notebook /project/mang/users/tosin/GLP/lpn_for_nonconvex_control/exps/exp_4_1_2_quadratic_16D.ipynb to notebook
+Traceback (most recent call last):
+  File "/project/mang/users/andreas/mamba/mamba_envs/env_lpn/lpn_env/lib/python3.13/site-packages/nbformat/reader.py", line 19, in parse_json
+    nb_dict = json.loads(s, **kwargs)
+  File "/project/mang/users/andreas/mamba/mamba_envs/env_lpn/lpn_env/lib/python3.13/json/__init__.py", line 346, in loads
+    return _default_decoder.decode(s)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^
+  File "/project/mang/users/andreas/mamba/mamba_envs/env_lpn/lpn_env/lib/python3.13/json/decoder.py", line 345, in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+               ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "/project/mang/users/andreas/mamba/mamba_envs/env_lpn/lpn_env/lib/python3.13/json/decoder.py", line 361, in raw_decode
+    obj, end = self.scan_once(s, idx)
+               ~~~~~~~~~~~~~~^^^^^^^^
+json.decoder.JSONDecodeError: Expecting ',' delimiter: line 864 column 1 (char 282618)
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/project/mang/users/andreas/mamba/mamba_envs/env_lpn/lpn_env/bin/jupyter-nbconvert", line 10, in <module>
+    sys.exit(main())
+             ~~~~^^
+  File "/project/mang/users/andreas/mamba/mamba_envs/env_lpn/lpn_env/lib/python3.13/site-packages/jupyter_core/application.py", line 284, in launch_instance
+    super().launch_instance(argv=argv, **kwargs)
+    ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+  File "/project/mang/users/andreas/mamba/mamba_envs/env_lpn/lpn_env/lib/python3.13/site-packages/traitlets/config/application.py", line 1075, in launch_instance
+    app.start()
+    ~~~~~~~~~^^
+  File "/project/mang/users/andreas/mamba/mamba_envs/env_lpn/lpn_env/lib/python3.13/site-packages/nbconvert/nbconvertapp.py", line 420, in start
+    self.convert_notebooks()
+    ~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/project/mang/users/andreas/mamba/mamba_envs/env_lpn/lpn_env/lib/python3.13/site-packages/nbconvert/nbconvertapp.py", line 597, in convert_notebooks
+    self.convert_single_notebook(notebook_filename)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+  File "/project/mang/users/andreas/mamba/mamba_envs/env_lpn/lpn_env/lib/python3.13/site-packages/nbconvert/nbconvertapp.py", line 563, in convert_single_notebook
+    output, resources = self.export_single_notebook(
+                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        notebook_filename, resources, input_buffer=input_buffer
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/project/mang/users/andreas/mamba/mamba_envs/env_lpn/lpn_env/lib/python3.13/site-packages/nbconvert/nbconvertapp.py", line 487, in export_single_notebook
+    output, resources = self.exporter.from_filename(
+                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        notebook_filename, resources=resources
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/project/mang/users/andreas/mamba/mamba_envs/env_lpn/lpn_env/lib/python3.13/site-packages/nbconvert/exporters/exporter.py", line 201, in from_filename
+    return self.from_file(f, resources=resources, **kw)
+           ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/project/mang/users/andreas/mamba/mamba_envs/env_lpn/lpn_env/lib/python3.13/site-packages/nbconvert/exporters/exporter.py", line 221, in from_file
+    nbformat.read(file_stream, as_version=4), resources=resources, **kw
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/project/mang/users/andreas/mamba/mamba_envs/env_lpn/lpn_env/lib/python3.13/site-packages/nbformat/__init__.py", line 174, in read
+    return reads(buf, as_version, capture_validation_error, **kwargs)
+  File "/project/mang/users/andreas/mamba/mamba_envs/env_lpn/lpn_env/lib/python3.13/site-packages/nbformat/__init__.py", line 92, in reads
+    nb = reader.reads(s, **kwargs)
+  File "/project/mang/users/andreas/mamba/mamba_envs/env_lpn/lpn_env/lib/python3.13/site-packages/nbformat/reader.py", line 75, in reads
+    nb_dict = parse_json(s, **kwargs)
+  File "/project/mang/users/andreas/mamba/mamba_envs/env_lpn/lpn_env/lib/python3.13/site-packages/nbformat/reader.py", line 25, in parse_json
+    raise NotJSONError(message) from e
+nbformat.reader.NotJSONError: Notebook does not appear to be JSON: '{\n "cells": [\n  {\n   "cell_type": "m...
+[NbConvertApp] Converting notebook /project/mang/users/tosin/GLP/lpn_for_nonconvex_control/exps/exp_4_1_2_quadratic_16D copy.ipynb to notebook
+[NbConvertApp] Writing 711696 bytes to /project/mang/users/tosin/GLP/lpn_for_nonconvex_control/exps/exp_4_1_2_quadratic_16D copy.ipynb
+[NbConvertApp] Converting notebook /project/mang/users/tosin/GLP/lpn_for_nonconvex_control/exps/exp_4_1_2_quadratic_32D.ipynb to notebook
+[NbConvertApp] Writing 639773 bytes to /project/mang/users/tosin/GLP/lpn_for_nonconvex_control/exps/exp_4_1_2_quadratic_32D.ipynb
+[NbConvertApp] Converting notebook /project/mang/users/tosin/GLP/lpn_for_nonconvex_control/exps/exp_4_1_2_quadratic_64D.ipynb to notebook
+slurmstepd: error: *** JOB 16316179 ON compute-0-37 CANCELLED AT 2025-11-16T20:37:38 DUE TO TIME LIMIT ***
