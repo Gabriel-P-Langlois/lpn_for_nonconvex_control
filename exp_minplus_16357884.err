@@ -1,0 +1,12 @@
+[NbConvertApp] Converting notebook /project/mang/users/tosin/GLP/lpn_for_nonconvex_control/exps/exp_1_minplus_2D.ipynb to notebook
+[NbConvertApp] Writing 316234 bytes to /project/mang/users/tosin/GLP/lpn_for_nonconvex_control/exps/exp_1_minplus_2D.ipynb
+[NbConvertApp] Converting notebook /project/mang/users/tosin/GLP/lpn_for_nonconvex_control/exps/exp_1_minplus_4D.ipynb to notebook
+[NbConvertApp] Writing 327709 bytes to /project/mang/users/tosin/GLP/lpn_for_nonconvex_control/exps/exp_1_minplus_4D.ipynb
+[NbConvertApp] Converting notebook /project/mang/users/tosin/GLP/lpn_for_nonconvex_control/exps/exp_1_minplus_8D.ipynb to notebook
+[NbConvertApp] Writing 345986 bytes to /project/mang/users/tosin/GLP/lpn_for_nonconvex_control/exps/exp_1_minplus_8D.ipynb
+[NbConvertApp] Converting notebook /project/mang/users/tosin/GLP/lpn_for_nonconvex_control/exps/exp_1_minplus_16D.ipynb to notebook
+[NbConvertApp] Writing 361948 bytes to /project/mang/users/tosin/GLP/lpn_for_nonconvex_control/exps/exp_1_minplus_16D.ipynb
+[NbConvertApp] Converting notebook /project/mang/users/tosin/GLP/lpn_for_nonconvex_control/exps/exp_1_minplus_32D.ipynb to notebook
+[NbConvertApp] Writing 362790 bytes to /project/mang/users/tosin/GLP/lpn_for_nonconvex_control/exps/exp_1_minplus_32D.ipynb
+[NbConvertApp] Converting notebook /project/mang/users/tosin/GLP/lpn_for_nonconvex_control/exps/exp_1_minplus_64D.ipynb to notebook
+slurmstepd: error: *** JOB 16357884 ON compute-0-37 CANCELLED AT 2025-11-21T00:49:34 DUE TO TIME LIMIT ***

@@ -1,0 +1,20 @@
+Running on host: compute-0-37
+CUDA_VISIBLE_DEVICES=0
+Working directory: /project/mang/users/tosin/GLP/lpn_for_nonconvex_control
+--- Starting Notebook Execution ---
+Executing notebook: exp_1_minplus_2D.ipynb
+Successfully executed exp_1_minplus_2D.ipynb
+-----------------------------------
+Executing notebook: exp_1_minplus_4D.ipynb
+Successfully executed exp_1_minplus_4D.ipynb
+-----------------------------------
+Executing notebook: exp_1_minplus_8D.ipynb
+Successfully executed exp_1_minplus_8D.ipynb
+-----------------------------------
+Executing notebook: exp_1_minplus_16D.ipynb
+Successfully executed exp_1_minplus_16D.ipynb
+-----------------------------------
+Executing notebook: exp_1_minplus_32D.ipynb
+Successfully executed exp_1_minplus_32D.ipynb
+-----------------------------------
+Executing notebook: exp_1_minplus_64D.ipynb
