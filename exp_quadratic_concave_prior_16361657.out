@@ -1,0 +1,11 @@
+Running on host: compute-0-38
+CUDA_VISIBLE_DEVICES=0
+Working directory: /project/mang/users/tosin/GLP/lpn_for_nonconvex_control
+--- Starting Notebook Execution ---
+Executing notebook: exp_quadratic_concave_prior_32D.ipynb
+Successfully executed exp_quadratic_concave_prior_32D.ipynb
+-----------------------------------
+Executing notebook: exp_quadratic_concave_prior_64D.ipynb
+Successfully executed exp_quadratic_concave_prior_64D.ipynb
+-----------------------------------
+--- All notebooks execution complete. ---
