@@ -1,0 +1,69 @@
+#!/bin/bash
+#SBATCH --job-name=exp_L1_prior
+#SBATCH --output=exp_L1_prior_%j.out
+#SBATCH --error=exp_L1_prior_%j.err
+#SBATCH --gres=gpu:1
+#SBATCH --mem=16G  # Increased memory
+#SBATCH --time=16:00:00  # Increased time
+#SBATCH --cpus-per-task=4
+#SBATCH --mail-user=oaa323@lehigh.edu
+#SBATCH --mail-type=end
+
+# --- Load modules ---
+module purge
+module load cuda-toolkit/11.3
+
+# --- Activate environment ---
+eval "$(mamba shell hook --shell bash)"
+mamba activate /project/mang/users/andreas/mamba/mamba_envs/env_lpn/lpn_env
+
+# --- Set paths ---
+export PROJECT_ROOT="/project/mang/users/tosin/GLP/lpn_for_nonconvex_control"
+export PYTHONPATH="${PROJECT_ROOT}:${PROJECT_ROOT}/exps:${PYTHONPATH}"
+cd "${PROJECT_ROOT}"
+
+# --- Debug info ---
+echo "Running on host: $(hostname)"
+echo "CUDA_VISIBLE_DEVICES=$CUDA_VISIBLE_DEVICES"
+echo "Working directory: $(pwd)"
+
+# --- Directory where notebooks are stored ---
+NOTEBOOK_DIR="${PROJECT_ROOT}/exps"
+
+# --- List of notebooks to execute ---
+NOTEBOOKS=(
+    "exp_L1_prior_2D.ipynb"
+    "exp_L1_prior_4D.ipynb"
+    "exp_L1_prior_8D.ipynb"
+    "exp_L1_prior_16D.ipynb"
+    "exp_L1_prior_32D.ipynb"
+    "exp_L1_prior_64D.ipynb"
+    )
+
+# --- Run all notebooks ---
+echo "--- Starting Notebook Execution ---"
+
+for notebook in "${NOTEBOOKS[@]}"; do
+    echo "Executing notebook: ${notebook}"
+
+    # Run the notebook, execute all cells, and overwrite the file in place.
+    # The --allow-errors flag is useful if you expect some cells to fail 
+    # but still want to continue to the next cells/notebook.
+    jupyter nbconvert --to notebook --execute \
+        --inplace \
+        --ExecutePreprocessor.kernel_name='python3' \
+        --ExecutePreprocessor.timeout=21600 \
+        "${NOTEBOOK_DIR}/${notebook}"
+
+    # Check the exit status of jupyter nbconvert
+    if [ $? -eq 0 ]; then
+        echo "Successfully executed ${notebook}"
+    else
+        echo "ERROR executing ${notebook}. Exiting script."
+        # Optionally exit the job on the first notebook failure
+        # exit 1 
+    fi
+    echo "-----------------------------------"
+done
+
+echo "--- All notebooks execution complete. ---"
