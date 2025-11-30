@@ -4,7 +4,7 @@
 #SBATCH --error=exp_L1_prior_%j.err
 #SBATCH --gres=gpu:1
 #SBATCH --mem=16G  # Increased memory
-#SBATCH --time=16:00:00  # Increased time
+#SBATCH --time=6:00:00  # Increased time
 #SBATCH --cpus-per-task=4
 #SBATCH --mail-user=oaa323@lehigh.edu
 #SBATCH --mail-type=end
@@ -32,11 +32,11 @@ NOTEBOOK_DIR="${PROJECT_ROOT}/exps"
 
 # --- List of notebooks to execute ---
 NOTEBOOKS=(
-    "exp_L1_prior_2D.ipynb"
-    "exp_L1_prior_4D.ipynb"
-    "exp_L1_prior_8D.ipynb"
-    "exp_L1_prior_16D.ipynb"
-    "exp_L1_prior_32D.ipynb"
+    #"exp_L1_prior_2D.ipynb"
+    #"exp_L1_prior_4D.ipynb"
+    #"exp_L1_prior_8D.ipynb"
+    #"exp_L1_prior_16D.ipynb"
+    #"exp_L1_prior_32D.ipynb"
     "exp_L1_prior_64D.ipynb"
     )
 
