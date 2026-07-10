@@ -1,0 +1,215 @@
+\section{Background} \label{sec:background}
+This section reviews concepts from real and convex analysis that will be used in this paper. We refer the reader to \cite{folland2013real,hiriart2013convexI,hiriart2013convexII,rockafellar1970convex,rockafellar2009variational} for comprehensive references. In what follows, the Euclidean scalar product on $\Rn$ will be denoted by $\left\langle \cdot,\cdot\right\rangle $ and its associated norm by $\left\Vert \cdot\right\Vert _{2}$. The closure and interior of a non-empty set $C\subset\Rn$ will be denoted by $\cl C$ and $\inter C$, respectively. The boundary of a non-empty set $C\subset\Rn$ is defined as $\cl C \setminus \inter C$ and will be denoted by $\bd C$. The domain of a function $f\colon\Rn\to\R\cup\{+\infty\}$ is the set $\dom f = \left\{ \bx\in\Rn : f(\bx)<+\infty\right\}$.
+%
+%
+Let $f:\Omega \times \Omega' \to \R$ with $\Omega\times\Omega' \subset \Rn\times\mathbb{R}^{n'}$ at $(\bx,\by) \in \Omega\times \Omega'$. It will be useful in this paper to consider the gradient $\nabla_{\bx}f(\bx,\by)$, divergence $\nabla_{\bx} \cdot f(\bx,\by)$ and Laplacian $\Delta_{\bx} f(\bx,\by)$ of $\Omega \ni \bx \mapsto f(\bx,\by)$ for $\by \in \Omega'$, which are defined as follows: $\nabla_{\bx} f(\bx,\by) = \left(\frac{\partial f}{\partial x_1} (\bx,\by), \dots, \frac{\partial f}{\partial x_n} (\bx,\by)\right)$,
+$\nabla_x \cdot f(\bx,\by) = \sum_{i=1}^n\frac{\partial f}{\partial x_i}(\bx,\by)$, and
+$\Delta_x f(\bx,\by) = \sum_{i=1}^n\frac{\partial^2 f}{\partial x_i^2}(\bx,\by)$.
+
+For convenience to the reader, we summarize some notations and definitions in Table~\ref{tab:definitions}; the definitions are explained in detail below.
+\newcolumntype{s}{>{\hsize=.7\hsize}X}
+\begin{table}[!h]
+\centering
+ \caption{Notation used in this paper. Here, we use $C$ to denote a set in $\R^n$, $f$ to denote a function from $\R^n$ to $\R\cup\{+\infty\}$ and $\bx$ to denote a vector in $\Rn$. The closure and interior of a non-empty set $C \subset \Rn$ are denoted by $\cl C$ and $\inter C$, respectively.} 
+ \label{tab:definitions}
+\begin{tabularx}{\textwidth}{ l|s|X }
+\hline
+\noalign{\smallskip}
+ Notation & Meaning & Definition\\
+ \noalign{\smallskip}
+ \hline
+ \noalign{\smallskip}
+%
+ $\left\langle \cdot,\cdot\right\rangle $ & 
+ Euclidean scalar product in $\mathbb{R}^{n}$ & $\langle \bx, \by\rangle \coloneqq \sum_{i=1}^n x_iy_i$
+ \\
+ $\left\Vert \cdot\right\Vert _{2}$ &
+ Euclidean norm in $\mathbb{R}^{n}$ & $\left\Vert \bx\right\Vert _{2} \coloneqq \sqrt{\langle \bx, \bx\rangle}$
+ \\
+ $\ri C$ & Relative interior of $C$ & The interior of $C$ with respect to the minimal hyperplane containing $C$ in $\Rn$
+ \\
+ $\bd C$ & Boundary of $C$ & The boundary of a non-empty set $C$ is defined as $\cl C \setminus \inter C$.
+ \\
+ $\dom f$ & Domain of $f$ & $\{\bx\in \Rn:\ f(\bx) < +\infty\}$
+ \\
+ $\gmRn$ & A useful and standard class of convex functions & The set containing all proper, convex, lower semicontinuous functions from $\Rn$ to $\R\cup\{+\infty\}$
+ \\
+ $\pi_{C}(\bx)$ & $\pi_{C}(\bx)\coloneqq\argmin_{\by\in C}\left\Vert \bx-\by\right\Vert _{2}^{2}$ & Projection of $\bx \in \Rn$ onto the closed convex set $C$.
+ \\
+ $\partial f(\bx)$ & Subdifferential of $f$ at $\bx$ & $\{\bp\in\Rn:\ f(\by)\geqslant f(\bx) + \langle \bp, \by-\bx\rangle \ \forall \by\in\Rn\}$
+ \\
+ $\dom \partial f$ & $\bx \in \dom \partial f \implies \partial f(\bx) \neq \varnothing$ & The set of points $\bx \in \dom f$ for which the subdifferential $\partial f(\bx)$ is non-empty.
+ \\
+ $f^*$ & Fenchel--Legendre transform of $f$ & $f^*(\bp) \coloneqq \sup_{\bx\in \Rn} \{\langle \bp, \bx\rangle - f(\bx)\}$
+ \\
+ \noalign{\smallskip}
+\hline
+ \end{tabularx}
+\end{table}
+
+\begin{defn}[Proper and lower semicontinuous functions] \label{def:domains_prop}
+A function $f\colon\Rn\to\R\cup\{+\infty\}$ is proper if $\dom f \neq \varnothing$ and $f(\bx) > -\infty$ for every $\bx \in \dom f$. 
+
+A function $f\colon\Rn\to\R\cup\{+\infty\}$ is lower semicontinuous at $\bx\in\Rn$ if it satisfies $\liminf_{k\to+\infty}f(\bx_{k})\geqslant f(\bx)$ for every sequence $\left\{ \bx_{k}\right\} _{k=1}^{+\infty}\subset\Rn$ such that $\lim_{k\to+\infty}\bx_{k}=\bx$.
+\end{defn}
+%
+\begin{defn}[Convex sets and their relative interiors] \label{def:convex_sets}
+A subset $C\subset\Rn$ is convex if for every pair $(\bx,\by) \in C \times C$ and every scalar $\lambda \in (0,1)$, the line segment $\lambda\bx+(1-\lambda)\by$ is contained in $C$.
+
+The relative interior of a convex set $C$, denoted by $\ri(C)$, is the set of points in the interior of the unique smallest affine set containing $C$. Every convex set $C$ with non-empty interior is $n$-dimensional with $\ri C=\inter C$ and has positive Lebesgue measure, and furthermore the $n$-dimensional Lebesgue measure of the boundary $\bd C$ is equal to zero \cite{lang1986note}.
+\end{defn}
+%
+\begin{defn}[Convex functions and the set $\gmRn$] \label{def:convex} 
+A proper function $f\colon\Rn\to\R\cup\{+\infty\}$ is convex if its domain is convex and if the inequality
+\[
+f(\lambda\bx+(1-\lambda)\by)\leqslant\lambda f(\bx)+(1-\lambda)f(\by)
+\]
+holds for every pair $(\bx,\by) \in \dom f \times \dom f$ and every scalar $\lambda\in[0,1]$. It is \textit{strictly convex} if the inequality above is strict whenever $\bx\neq\by$ and $\lambda \in (0,1)$, and it is \textit{strongly convex with parameter $m>0$} if 
+\[
+f(\lambda\bx+(1-\lambda)\by)\leqslant\lambda f(\bx)+(1-\lambda)f(\by)-\frac{m}{2}\lambda(1-\lambda)\left\Vert \bx-\by\right\Vert _{2}^{2}
+\]
+for every pair $(\bx,\by) \in \dom f \times \dom f$ and every scalar $\lambda\in[0,1]$.
+
+The class of proper, convex and lower semicontinuous functions is denoted by $\gmRn$.
+\end{defn}
+%
+\begin{defn}[Projections] \label{def:projections} 
+Let $C$ be a closed convex subset of $\Rn$. To every $\bx \in \Rn$, there exists a unique element $\pi_{C}(\bx) \in C$ called the projection of $\bx$ onto $C$ that is closest to $\bx$ in Euclidean norm, i.e.,
+\begin{equation} \label{eq:proj_def}
+\pi_{C}(\bx)\coloneqq\argmin_{\by\in C}\left\Vert \bx-\by\right\Vert _{2}^{2}.
+\end{equation}
+This correspondence defines a map $\bx \mapsto \pi_{C}(\bx)$ from $\Rn$ to $C$ called the projector onto $C$ (\cite{aubin2012differential}, Chapter 0.6, Corollary 1). It satisfies the characterization
+\begin{equation} \label{eq:proj_char}
+\left\langle \bx-\pi_{C}(\bx),\by-\pi_{C}(\bx)\right\rangle \leqslant0, \quad\forall\by\in C.
+\end{equation}
+\end{defn}
+%
+\begin{comment}
+\begin{defn}[Differentiability and the gradient] \label{def:diff_grad}
+Let $\Omega$ be an open set, $f\colon \Omega \to \R$, and $\bx \in \Omega$. The function $f$ is \textit{differentiable} at $\bx \in \Omega$ if there exists a linear form $Df(\bx) \colon \Rn\to\R$ such that
+\[
+f(\bx+\bh) = f(\bx) + Df(\bx) + o(\normtwo(\bh)),
+\]
+where $\lim_{\normtwo(\bh) \to 0}o(\normtwo(\bh)) = 0$.
+The linear form $Df(\bx)$ is called the differential of $f$ at $\bx$, and it can be represented by a unique vector $\nabla f(\bx) \in \Rn$ via $Df(\bx)(\bh) = \left \langle \nabla f(\bx),\bh \right\rangle$ for every $\bh \in \Rn$. The element $\nabla f(\bx)$ is called the gradient of $f$ at $\bx$.
+\end{defn}
+\end{comment}
+%
+\begin{defn}[Subdifferentials and subgradients] \label{def:subgrad} 
+Let $f \in \gmRn$. The \textit{subdifferential} of $f$ at $\bx\in\dom f$ is the set $\partial f(\bx)$ of vectors $\bp\in\Rn$ that satisfies the inequality
+\begin{equation} \label{eq:subgrad_def}
+f(\by)\geqslant f(\bx)+\left\langle \bp,\by-\bx\right\rangle
+\end{equation}
+for every $\by \in \Rn$. The subdifferential $\partial f(\bx)$ is a closed convex subset of $\Rn$ whenever it is non-empty, and the vectors $\bp\in\partial f(\bx)$ are called the subgradients of $f$ at $\bx$.
+
+The set of points $\bx\in\dom f$ for which the subdifferential $\partial f(\bx)$ is non-empty is denoted by $\dom\partial f$, and it includes the relative interior of the domain of $f$, i.e., $\ri(\dom f) \subset \dom\partial f$ (\citep{rockafellar1970convex}, Theorem 23.4). 
+
+If $f$ is strongly convex of parameter $m > 0$, then the subgradients of $f$ at $\bx \in \dom \partial f$ satisfy the following inequality
+\[
+f(\by)\geqslant f(\bx)+\left\langle \bp,\by-\bx\right\rangle + \frac{m}{2}\normsq{\by-\bx}.
+\]
+
+If $f$ is differentiable at $\bx$, then $\bx \in \dom\partial f$ and the gradient $\nabla f(\bx)$ is the unique subgradient of $f$ at $\bx$, and conversely if $f$ has a unique subgradient at $\bx$, then $f$ is differentiable at that point (\citep{rockafellar1970convex}, Theorem 25.1).
+
+The set-valued subdifferential mapping $\dom \partial f \ni \by \mapsto \partial f(\by)$ satisfies two important properties. First, it is monotone in that if $f$ is strongly convex of parameter $m \geqslant 0$ for every pair $(\by,\by_{0}) \in \dom\partial f \times \dom\partial f$ and $\bp\in\partial f(\by)$, $\bp_{0}\in\partial f(\by_{0})$, the following inequality holds (\cite{rockafellar1970convex}, page 240 and Corollary 31.5.2):
+\begin{equation} \label{eq:monotone_mapping}
+m\normsq{\by-\by_0} \leqslant \left\langle \bp-\bp_{0},\by-\by_{0}\right\rangle.
+\end{equation}
+Second, the mapping $\dom\partial f \ni \by \mapsto \pi_{\partial f(\by)}(\boldsymbol{0})$ is well-defined, and it selects the subgradient of the minimal norm in $\partial f(\bx)$ and defines a function continuous almost everywhere on $\dom\partial f$, a consequence of the fact that this mapping agrees with the gradient of $f$ over the set of points in $\inter(\dom J)$ at which $f$ is differentiable (\cite{rockafellar1970convex}, Theorem 25.5). 
+\end{defn}
+%
+\begin{defn}[Fenchel--Legendre transform] \label{def:legendre_t} 
+Let $f\in\gmRn$. The \textit{Fenchel--Legendre transform} $f^{*}\colon\Rn\to\mathbb{R\cup}\{+\infty\}$ of $f$ is defined by
+\begin{equation}
+f^{*}(\bp)=\sup_{\bx\in\Rn}\left\{ \left\langle \bp,\bx\right\rangle -f(\bx)\right\} .\label{eq:fenchel_t_def}
+\end{equation}
+For every $f\in\gmRn$, the mapping $f\mapsto f^{*}$ is one-to-one, $f^{*}\in\gmRn$, and $(f^{*})^{*}=f$. Moreover, for every $\bx\in\Rn$ and $\bp\in\Rn$, $f$ and $f^*$ satisfy Fenchel's inequality
+\begin{equation} \label{eq:fenchel_ineq}
+f(\bx)+f(\bp)\geqslant\left\langle \bx,\bp\right\rangle,
+\end{equation}
+where equality holds if and only if $\bp\in\partial f(\bx)$, if and only if $\bx\in\partial f^{*}(\bp)$ (\citep{hiriart2013convexII}, corollary 1.4.4). If $f$ is also differentiable, the supremum in (\ref{eq:fenchel_t_def}) is attained whenever there exists $\bx\in\Rn$ such that $\bp=\nabla f(\bx)$. 
+\end{defn}
+%
+\begin{defn}[Bregman divergences] \label{def:breg_div} 
+Let $f\in\gmRn$. The \textit{Bregman divergence} of $f$ is the function $D_{f}\colon\Rn\times\Rn\to\R\cup\{+\infty\}$ defined by
+\begin{equation}
+D_{f}(\bx,\bp)=f(\bx)-\left\langle \bp,\bx\right\rangle +f^{*}(\bp).\label{eq:breg_good_def}
+\end{equation}
+It satisfies $D_{f}(\bx,\bp)\geqslant0$ for every $\bx\in\Rn$ and $\bp\in\Rn$ by Fenchel's inequality (\ref{eq:fenchel_ineq}), with $D_{f}(\bx,\bp)=0$ whenever $\bp\in\partial f(\bx)$. It also satisfies $D_{f}(\bx,\bp)=D_{f^{*}}(\bp,\bx)$, with $D_{f}(\bx,\bp)=D_{f}(\bp,\bx)$ if and only if $f$ is the quadratic $f=\frac{1}{2}\left\Vert \cdot\right\Vert _{2}^{2}$.
+\end{defn}
+%
+\begin{defn}[Infimal convolutions] \label{def:inf_conv}
+Let $f_{1}\in\gmRn$ and $f_{2}\in\gmRn$. The \textit{infimal convolution} of $f_{1}$ and $f_{2}$ is the function
+\begin{equation}\label{eq:infconv_def}
+\Rn \ni \bx \mapsto (f_{1} \Box f_{2})(\bx) = \inf_{\bx_{1}+\bx_{2}=\bx}\left\{ f_{1}(\bx_{1})+f_{2}(\bx_{2})\right\}.
+\end{equation}
+The infimal convolution is exact if the infimum is attained at $\bx_{1}\in\dom f_{1}$ and $\bx_{2}\in\dom f_{2}$, and in that case the infimum in \eqref{eq:infconv_def} can be replaced by a minimum. The Fenchel--Legendre transform of the infimal convolution (\ref{eq:infconv_def}) is the sum of their respective Fenchel--Legendre transforms (\citep{rockafellar1970convex}, Theorem 16.4), that is,
+\[
+\left(f_{1}\Box f_{2}\right)^{*}(\bp)=f_{1}^{*}(\bp)+f_{2}^{*}(\bp).
+\]
+%
+If $f \in \gmRn$, then Moreau's decomposition Theorem \cite{hiriart1989moreau,moreau1965proximite} asserts that
+\[
+\frac{1}{2}\normsq{\cdot}\Box f + \frac{1}{2}\normsq{\cdot}\Box f^* = \frac{1}{2}\normsq{\cdot}.
+\]
+\end{defn}
+%
+The following proposition provides conditions for which two functions $f_1$ and $f_2$ satisfying $f_1 + f_2 = \frac{1}{2}\normsq{\cdot}$ can be factorized, respectively, in the form $\frac{1}{2}\normsq{\cdot}\Box f$ and $\frac{1}{2}\normsq{\cdot}\Box f^*$. The proof can be found in~\cite{hiriart1989moreau}.
+\begin{prop}[Infimal deconvolutions \cite{hiriart1989moreau}] \label{prop:deconvolutions}
+Suppose $f_1$ and $f_2$ are two convex functions on $\Rn$ such that $f_1 + f_2 = \frac{1}{2}\normsq{\cdot}$. Then there exists a unique function $f \in \gmRn$ such that
+\[
+f_1 = \frac{1}{2}\normsq{\cdot}\Box f\, \mbox{and }\, f_2 = \frac{1}{2}\normsq{\cdot}\Box f^*,
+\]
+where $f(\bx) = f_2^*(\bx) - \frac{1}{2}\normsq{\bx}$ for every $\bx \in \Rn$. Moreover, $f_1$ and $f_2$ are continuously differentiable and
+\[
+\nabla f_1(\bx)\in\partial f(\nabla h(\bx))\quad\mbox{and}\quad\nabla f_2(\bx)\in\partial f^{*}(\nabla g(\bx)).
+\]
+\end{prop}
+%
+\begin{defn}[Moreau--Yosida envelopes and proximal mappings]\label{def:moreau_yosida}
+Let $t > 0$ and $J \in \gmRn$. The functions
+\begin{equation}
+\bx\mapsto \left(\frac{1}{2t}\|\cdot\|_2^2 \Box J\right)(\bx) \;=\;  \inf_{\by\in\Rn}\left\{ \frac{1}{2t}\normsq{\bx-\by}+J(\by)\right\} 
+\end{equation}
+and
+\begin{equation}
+\bx\mapsto \argmin_{\by\in\Rn}\left\{ \frac{1}{2t}\normsq{\bx-\by}+J(\by)\right\}
+\end{equation}
+are called the Moreau--Yosida envelope and proximal mapping of $J$, respectively \cite{hiriart2013convexII,moreau1965proximite,rockafellar2009variational}.
+\end{defn}
+%
+The following proposition provides connections between HJ PDEs and Moreau--Yosida envelopes and proximal mappings, which corresponds to certain optimization problems in image denoising problems. Specifically, this proposition describes the behavior of the solution to the infimum problem \eqref{eq:minimization_prob} and its corresponding minimizer \eqref{eq:minimizer_prob}, and in particular that for any observed image $\bx\in\Rn$ and parameter $t>0$, the imaging problem \eqref{eq:minimization_prob} has always a unique solution. A summary of these results and their proof can be found in \cite{darbon2015convex}.
+\begin{prop}[\cite{darbon2015convex}]\label{thm:e_u_nonvisc_hj}
+Let $J\in\gmRn$. Then the following statements hold.
+\begin{enumerate}
+\item[(i)]  The unique continuously differentiable and convex function $S_0\colon\Rn\times[0,+\infty)\to\R$ that satisfies the first-order Hamilton--Jacobi equation with initial data
+\begin{equation}
+\begin{dcases}
+\frac{\partial S_0}{\partial t}(\bx,t)+\frac{1}{2}\normsq{\nabla_{\bx}S_0(\bx,t)}=0 & \mbox{in }\Rn\times(0,+\infty),\\
+S_0(\bx,0)=J(\bx) & \mbox{in }\Rn,
+\end{dcases}\label{eq:hj_non_visc_pde}
+\end{equation}
+is defined by
+\begin{align}
+S_0(\bx,t) & = \left((\frac{1}{2t}\normsq{\cdot}) \Box J\right)(\bx) \qquad(\mbox{Lax--Oleinik formula}) \\
+ & =\inf_{\by\in\Rn}\left\{ \frac{1}{2t}\normsq{\bx-\by}+J(\by)\right\}. \label{eq:lax_formula}
+\end{align}
+Furthermore, for every $\bx\in\dom J$, sequence $\{t_k\}_{k=1}^{+\infty}$ of positive real numbers converging to $0$, and sequence $\{\boldsymbol{d}_k\}_{k=1}^{+\infty}$ of vectors converging to $\boldsymbol{d}\in\Rn$, the pointwise limit $S_0(\bx+t_k\boldsymbol{d}_k,t_k)$ as $k \to +\infty$ exists and satisfies
+\[
+\lim_{k \to +\infty} S_0(\bx+t_k\boldsymbol{d}_k,t_k)=J(\bx).
+\]
+\item[(ii)]  For every $\bx\in\Rn$ and $t>0$, the infimum in (\ref{eq:lax_formula}) exists and is attained at a unique point $\bu_{MAP}(\bx,t)\in\dom\partial J$. In addition, the minimizer $\bu_{MAP}(\bx,t)$ satisfies the formula
+\begin{equation} \label{eq:grad_map_rep}
+\bu_{MAP}(\bx,t)=\bx-t\nabla_{\bx}S_0(\bx,t),
+\end{equation}
+and $\left(\frac{\bx-\bu_{MAP}(\bx,t)}{t}\right)\in\partial J(\bu_{MAP}(\bx,t))$.
+\item[(iii)] Let $\{t_k\}_{k=1}^{+\infty}$ be a sequence of positive real numbers converging to zero and let $\{\boldsymbol{d}_k\}_{k=1}^{+\infty}$ be a sequence of elements in $\Rn$ converging to some $\boldsymbol{d} \in \Rn$. Then, for every $\bx \in \dom J$ the pointwise limit of $\bu_{MAP}(\bx,t)$ as $t\to0$ exists and satisfies
+\[
+\lim_{k\to +\infty} \bu_{MAP}(\bx + t_k\boldsymbol{d}_{k},t_k)=\bx.
+\]
+\item[(iv)] Let $\bx \in \dom\partial J$ and let $\{t_k\}_{k=1}^{+\infty}$ be a sequence of positive real numbers converging to zero. Then the limit of $\nabla_{\bx}S_0(\bx,t_k)$ as $k\to +\infty$ exists and satisfies
+\begin{equation} \label{eq:grad_limit_subdiff}
+    \lim_{k\to +\infty}\nabla_{\bx}S_0(\bx,t_k) = \pi_{\partial J(\by)}(\boldsymbol{0}).
+\end{equation}
+\end{enumerate}
+\end{prop}

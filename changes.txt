@@ -1,0 +1,291 @@
+Changelog for numerics/ (LPN / Hamilton-Jacobi experiments)
+Running log; newest entries on top. Use as git commit info.
+Full protocol, figures and the mathematics: numerics_audit.tex (this dir, 9 pp).
+
+################################################################
+# 1. WHERE THINGS STAND
+################################################################
+BEFORE (2026-07-08): 38 notebooks in exps/, each with its own copy of the
+targets, network, inverters and plotting. Every bug existed in up to 38 places
+and the copies had diverged.
+
+NOW:
+  src/               single source of truth
+  bin/               4 family configs (quadratic_l1, negl1, concave_quad,
+                     minplus), each --dim; _run.py (pipeline); run_all.py (sweep);
+                     plot.py (figures from a checkpoint, no retrain)
+  bin/not_in_paper/  maxplus_case3/4 + README -- NOT in the manuscript
+  ext/               upstream LPN verbatim + PROVENANCE.md
+  legacy/slurm/      21 archived SLURM artifacts
+  exps/              the 38 original notebooks, untouched, superseded
+
+The pipeline is correct. Its NUMBERS have moved by orders of magnitude several
+times, always because the SETUP was wrong, never the code: a corrupted target,
+a training box that starved both networks, a budget that left every network
+under-trained, and an architecture that silently departed from the manuscript.
+
+################################################################
+# 2. BUGS FIXED  (these change reported numbers)
+################################################################
+B1  [07-08] QuadraticL1 Moreau target corrupted: returned sum|prox(y)| + n*t/2
+    with n hardcoded to 1, dropping the curvature term. Corrupts psi, hence
+    BOTH routes.
+B2  [07-08] NegL1 value function missed the dimension factor: -(t)/2 instead of
+    -(n*t)/2. Error exactly (n-1)t/2.
+B3  [07-08] Route-1 recovery used 0.5*||x|| where Fenchel requires 0.5*||x||^2.
+B4  [07-08] The two networks used different losses (psi MAE, G MSE). Both MSE.
+B5  [07-08] lib/network.py used Mish, breaking ICNN convexity. Dropped.
+B6  [07-08] invert_ls is nonconvex and degenerate on affine pieces. Retired.
+B7  [07-09] BOTH max-plus targets have the wrong sign on t*H(p); the resulting
+    S exceeds J at 100% of test points, so neither is a Moreau envelope nor a
+    viscosity solution. Corrected via the Hopf formula (concave QP over the
+    simplex) in src/targets.py:MaxPlus, validated against a grid envelope.
+    RETRACTS the Phase-1 verdict that exp_4_1_3 was clean.
+B8  [07-09] Training box equalled the query box, starving both networks near
+    the boundary. See P1.
+B9  [07-09] Reported validation MSE described a DISCARDED model: training
+    early-stops and restores the best-validation weights, but the runner
+    reported the last epoch's error. Corrected 10/12 configs, all downward.
+B10 [07-09] The 300-epoch budget left every network under-trained. See P4.
+B11 [07-09] The width tiering 64/128/256 was OUR deviation from the paper.
+    See P5.
+
+################################################################
+# 3. PROTOCOL  (these change what the numbers MEAN)
+################################################################
+P1  TRAINING BOX != QUERY BOX. Train psi on [-A,A]^d with
+    A = problem.train_halfwidth(a), the least A with grad psi([-A,A]) covering
+    the query box. Route 1 evaluates psi at preimages that LEAVE the query box;
+    Route 2 trains G at inputs y_k = grad psi(x_k) that lie strictly INSIDE it.
+    QuadraticL1 A=a+t; Minplus A=((1+s)a+|mu|_inf)/s; NegL1 and ConcaveQuad
+    contract, so A=a (unaffected). Improved R1 140x and R2 5.7x at d=2.
+P2  SYMMETRIC EVALUATION. Same 1000 test points for both routes; unconditional
+    RMSE; no abstention; NO box projection for Route 1. Designs that let Route 1
+    abstain, or clamped its inverter to the training box, were RETRACTED as
+    preferential treatment.
+P3  ROUTE 1 = best RMSE over alpha in {0, 0.1} (Fang et al.'s regularizer).
+    grad psi(y) = x - alpha*y at the solution, so the prior is biased at
+    O(alpha) and the prox residual equals alpha*||y||/max(1,||x||) exactly.
+    At alpha=0 the objective is coercive iff x lies in range(grad psi_theta) --
+    true once psi_theta has converged (see R4). Keep the rule as cheap insurance.
+    ROUTE 2 = one forward pass, no alpha: J(x) = G(x) - 0.5||x||^2.
+    CERTIFICATES, same for both, no ground truth: the prox residual
+    ||grad psi(y(x)) - x||/max(1,||x||), with y from the solve (R1) or
+    y = grad G(x) (R2, since G ~= psi* so grad G = (grad psi)^-1); and the
+    Fenchel-Young gap psi(y)+G(x)-<x,y> >= 0. Neither suffices alone: the
+    residual is BLIND to divergence; FY is budget-invariant.
+P4  BUDGET IS IN OPTIMIZER STEPS: S = 250000, N = 15000*d, lr 1e-3 decayed x0.1
+    at 50% and 75% of S (fractions, so the schedule is invariant to S). NO early
+    stopping; best-validation checkpoint kept. Epochs are derived and are not
+    reported. Do NOT copy the paper's 20% decay cadence: it presumes exact
+    full-batch gradients (entry 17).
+P5  WIDTH FIXED AT 256, depth 2, beta 5, for every dimension -- as in the paper's
+    four table captions and all 24 reported-family notebooks. The tiering was
+    introduced by us on 07-08 from a PERFORMANCE observation (net oversized at
+    low d), never from an experiment. Reverting also removes a confound: with
+    N = 15000*d and |J| ~ 2d already growing, a jumping capacity would leave an
+    error-vs-d trend attributable to nothing.
+P6  Absolute RMSE is NOT comparable across d (|J| ~ 2d). Report relative error.
+    N/P ranges 0.14 (d=2) to 4.6 (d=64). Runs above d=8 are opt-in
+    (run_all.py --allow-high-dim).
+
+################################################################
+# 4. CODE QUALITY / PERFORMANCE
+################################################################
+C1  [07-08] One Softplus LPN in src/network.py; wclip after every step.
+C2  [07-08] One convex inverter (cvx_gd, with a tolerance) + cvx_cg.
+C3  [07-08] Mini-batch (512) training: ~50x faster than full-batch. The one
+    large performance win.
+C4  [07-09] conjugate_samples evaluated psi TWICE per call. Now one forward +
+    one backward: 1.62x faster, bitwise-identical output.
+C5  [07-09] network.forward built an unused second-order graph and mutated the
+    CALLER'S tensor in place. Both fixed, output identical. Honest accounting:
+    the speed gain is 1.01x, not a speedup worth claiming.
+C6  [07-09] init_weights DELETED. Measured: the default init beats the positive
+    inits it would install (psi val MSE 1.10e-3 vs 6.25e-3 for |default| vs
+    9.51e-2 for log-normal, d=2). The ~50% of inner weights wclip pins to 0 are
+    NOT lost capacity; sign-clipping acts as sparsification.
+C7  [07-09] Tree cleanup: .DS_Store, __pycache__, stale sweep logs deleted; 21
+    SLURM artifacts -> legacy/slurm/; cache/ (232 MB) and ideas/old_files/
+    (155 MB) gitignored but NOT deleted (not ours to remove).
+C8  [07-09] Checkpoints + metrics JSON on every run; bin/plot.py regenerates all
+    figures from weights (~3 min) instead of retraining (~28 min).
+C9  [07-09] src/diagnostics.py: four in-distribution figures replacing the
+    origin cross-section at high d (entry 19). src/plotting.py now draws BOTH
+    routes in the prior panel; it drew Route 2 only.
+
+################################################################
+# 5. SUPERSEDED NUMBERS -- DO NOT CITE
+################################################################
+  * Anything produced before P1 (the training-box amendment).
+  * R1 RMSE 4.7 (d=2) / 8.0 (d=4) and R2 0.34 / 0.84: extrapolation artifacts.
+  * R1 RMSE 4.81 at quadratic_l1_8D with alpha=0: a readout of invert_iters.
+  * Any psi/G validation MSE reported before B9.
+  * The whole 300-epoch table (logs/summary_300ep.csv): under-trained, psi up to
+    293x worse than at S=150000.
+  * The S=150000 table (logs/summary_final.csv) was run at the TIERED width and
+    is superseded by P5. Re-run in progress (quadratic_l1, d=2,4,8,16, width 256).
+
+WIN COUNT, for reference, under the tiered width at S=150000: Route 1 7/12,
+Route 2 4/12, one exact tie; no gap > 2.6x. Do NOT claim "Route 2 dominates" --
+every earlier table that suggested so had Route 1 handicapped. The defensible
+claim: Route 2 MATCHES a fully-tuned inversion baseline while never inverting.
+
+################################################################
+# 6. RETRACTIONS  (recorded because the numbers moved)
+################################################################
+R1  "The preimage lies far outside the training box, |y|_inf ~ 19." FALSE. The
+    exact preimage obeys |y*|_inf <= 5 at every d. The 19 was a diverging
+    iterate whose size is set by lr*iters.
+R2  "A zero prox residual certifies a preimage exists." FALSE. Where psi_theta
+    is asymptotically affine, grad psi_theta(y) -> x along a DIVERGING
+    minimizing sequence, so r ~ 0 is exactly what divergence looks like.
+R3  "The NegL1 origin hole is a Route-2 coverage defect." FALSE. Route 1, which
+    never touches G, is hit as hard (mean |err| 0.029 -> 0.342 vs Route 2's
+    0.025 -> 0.276 at d=2). Shared cause: a smooth Softplus cannot represent
+    psi's kink at y_i = 0, where d psi(0) = [-1,1].
+R4  "Route 1 at alpha=0 is intrinsically ill-posed." FALSE. The divergence was a
+    symptom of an UNDER-TRAINED psi_theta. With S=150000 no config diverges;
+    quadratic_l1_8D selects alpha=0 with max|y|=5.20 against the exact bound 5
+    (was 18.75). The budget-doubling measurement remains valid for the
+    under-trained network it was made on.
+R5  "Route 1 is more honest, it detects its own failure." FALSE. It is either
+    divergent (alpha=0, under-trained psi) or silently biased (alpha>0).
+R6  "exp_4_1_3's target is correct" (Phase 1). FALSE; see B7.
+
+NOTE: the alpha regularizer and the existence problem it addresses were ALREADY
+in the 2026-07-08 audit (it quotes Fang et al. adding theta/2*||y||^2 to force
+strong convexity). The 07-09 work re-derived it from the code. Read the audit
+before re-auditing.
+
+################################################################
+# 7. OPEN
+################################################################
+O1  Phase 5: the error-vs-K decay study for Gamma_K -- what referee R2.3 asked
+    for. Unbuilt. MaxPlus.maxplus_approx() now supplies Gamma_K against an exact
+    reference, so the ground truth is in hand.
+O2  Is width 256 right? UNTESTED, and only now testable: every prior measurement
+    was taken at a budget too short to converge, so a width ablation would have
+    measured which width trains fastest, not which fits best. The revert is
+    justified by consistency with the manuscript, not by evidence.
+O3  d >= 16 has not been run under the current protocol.
+O4  The max-plus ports use D2's MSE pipeline; the notebooks trained with LPN's
+    proximal-matching loss on a gamma ramp. They measure something different.
+    Deliberate; see bin/not_in_paper/README.md.
+O5  N = 10P (constant, ~1.4M) instead of N = 10000*d would make width, depth, N
+    and S all constant, leaving d as the sole variable. Nearly free under a step
+    budget. Not adopted: one change, not two.
+
+################################################################
+# 8. CHRONOLOGY  (detail lives in git history and the audit)
+################################################################
+2026-07-09 (19)  DIAGNOSTIC SUITE + CHECKPOINTS.
+                 _run.py now saves logs/ckpt/<run>_{psi,G}.pth and
+                 logs/<run>_metrics.json. bin/plot.py regenerates every figure
+                 from a checkpoint, any family, any dim, NO retrain (~3 min vs
+                 ~28). Verified on all six families (incl. bin/not_in_paper/
+                 maxplus_case3/4) and on d=1.
+                 src/diagnostics.py: conditional cross-section, typical ray,
+                 predicted-vs-true, prox scatter (SHARED first network), and
+                 preimage scatter (Route 2's own identity grad G = (grad psi)^-1).
+                 src/plotting.py: the prior panel now draws BOTH routes; it drew
+                 Route 2 only, which made the figures useless for the one
+                 comparison they exist to support.
+                 REMOVED: an error profile binned by ||x||_inf. In high d the max
+                 of n uniform coords concentrates near a, so the bin variable
+                 spans only 2.6-3.95 at d=16 and the figure reads as noise.
+                 RELABELLED: the prox scatter is a diagnostic of the SHARED psi,
+                 not of Route 1. Route 2 does not bypass psi_theta -- G is trained
+                 on y_k = grad psi(x_k) with targets G_k = <y_k,x_k> - psi(x_k),
+                 so psi's error propagates into G's targets. It bounds BOTH.
+                 FINDING (preimage scatter): grad G lies on the identity against
+                 y* = x + sign(x) wherever it is testable, but there is a
+                 structural GAP for |y*| < 1 -- the preimage map never takes
+                 values there, so grad G has nothing to fit. The same hole that
+                 afflicts NegL1, seen from the conjugate side. Not an error.
+
+2026-07-09 (18)  CROSS-SECTIONS MISLEAD IN HIGH DIMENSION. A cross-section along
+                 axis 1 fixes the other d-1 coords at EXACTLY zero; under the
+                 uniform measure that slice has volume fraction (eps/A)^{d-1} =
+                 1e-15 at d=16, 1e-63 at d=64. With N=240000 not one training
+                 point lies near it. The picture is pure extrapolation; the RMSE
+                 is measured on typical points. At d=16 the SAME checkpoint gives
+                 psi_theta offset by -1.45 on the axis slice and lying ON the
+                 exact curve on the conditional slice.
+                 => This answers the manuscript's own open question ("we are
+                 unable to explain ... it does not yield a good visual
+                 approximation of the cross sections ... probably due to the way
+                 we sample the hypercube"). The guess was right; now it has a
+                 formula. Same remark disposes of the d=64 "MSE reduced
+                 significantly" puzzle.
+
+2026-07-09 (17)  SCHEDULE. Do NOT copy the paper's decay cadence. The paper is
+                 FULL-BATCH, so one of its "epochs" is one gradient step: 5e5
+                 steps, x0.1 every 1e5 = every 20%. That presumes EXACT gradients.
+                 Ours are mini-batch. What tracks psi's val MSE is the number of
+                 steps at lr=1e-3, not the total budget (quadratic_l1, d=16):
+                     S=150k, (0.5,0.75)         ->  75k at 1e-3 -> 6.99e-2
+                     S=250k, (0.3,0.5,0.7,0.85) ->  75k at 1e-3 -> 6.30e-2
+                     S=300k, (0.5,0.75)         -> 150k at 1e-3 -> 7.83e-3
+                 Doubling the high-LR phase is worth 8x; +100k total steps while
+                 halving it is worth 11%. ADOPTED: S=250000, decay (0.5,0.75).
+                 Re-ran d=16: psi 7.92e-3, R1 0.1958, R2 0.2844, alpha=0, no
+                 divergence, max|y| 6.59. Relative 0.61% / 0.89%.
+
+2026-07-09 (16)  N = 15000*d (was 10000*d): 30000 at d=2, matching the paper.
+                 EARLY STOPPING REMOVED -- we under-fit, not overfit, and it
+                 truncated G on mini-batch noise (killed G at step 39500 of
+                 300000 at d=16). Best-validation CHECKPOINT kept.
+                 ALPHA SELECTION FIXED: diverged runs are now EXCLUDED, not
+                 merely ranked. The plain min was unsound -- at d=16 the alpha=0
+                 solve ran to max|y|=10.94 (bound 5) yet scored 0.667 against the
+                 regularized 0.800, so a plain min reported a meaningless number.
+                 The claim that divergence is "self-correcting" is RETRACTED.
+                 WIDTH reverted to a fixed 2x256 (see P5): all 24 reported-family
+                 notebooks and all four paper captions say 256/2. The tiering was
+                 ours, from a PERFORMANCE observation, never an experiment.
+
+2026-07-09 (15)  Width reverted to a fixed 2x256. Fact check: all 24 reported-
+                 family notebooks and all four paper captions say 256/2. The
+                 tiering was ours. Supersedes the (14) table.
+2026-07-09 (14)  Step budget applied (S=150k, N=10000*d); d<=8 re-run. psi
+                 improves 3.6x-293x; prior RMSE falls 2x-23x for both routes.
+                 The alpha=0 divergence disappears => it was under-training, not
+                 ill-posedness (R4). Win count 8-4 -> 7-4 + 1 tie: the ordering
+                 is carried by the protocol, not the budget.
+2026-07-09 (13)  Init ablation: the default init wins; init_weights deleted (C6).
+                 Under-trained, not under-sampled: at a fixed step budget 4x the
+                 data buys <10%, while 4x the steps on the SAME data recovers
+                 nearly the whole gain. Cost model calibrated at d=8 by varying
+                 only the width: the CPU is OVERHEAD-bound (256 = 14x params of
+                 64 but 2.7x time), so parameter counts overestimate cost.
+2026-07-09 (12)  Final d<=8 table under the symmetric protocol, best-of-alpha
+                 Route 1. Verified: the C4/C5 refactors are output-preserving
+                 (RMSE reproduces bitwise); B9 moved the val column on 10/12.
+2026-07-09 (11)  Two-alpha rule (P3). Route-2 stack audited: B9 found, C4/C5
+                 fixed. numerics_audit.tex addendum.
+2026-07-09 (10)  Max-plus cases ported to bin/not_in_paper/; both targets wrong
+                 (B7). Tree cleanup (C7).
+2026-07-09 (9)   NegL1 "origin hole" measured: real depletion (~3x) but NOT a
+                 Route-2 defect (R3).
+2026-07-09 (8)   Alpha sweep at d=4,8. Residual identity r = alpha*||y||/||x||
+                 confirmed. At d=8 alpha=0 diverged under an under-trained psi
+                 (20k->40k iters: max|y| 18.75->38.84, RMSE 5.04->11.35), which
+                 (14) later explained.
+2026-07-09 (7)   Symmetric sweep, d=2,4,8. Route-1 failure re-diagnosed; the
+                 prox residual shown to be blind to divergence (R2).
+2026-07-09 (6)   Box projection for Route 1 REVERTED as preferential treatment;
+                 symmetric certificates introduced (P2, P3).
+2026-07-09 (5)   d=4,8,16 coverage check: the box fix holds; coverage warnings at
+                 smoke budgets were undertraining artifacts.
+2026-07-09 (4)   Migration: 38 notebooks -> 4 family configs + run_all.py.
+                 36 of 38 collapse (exp_L1_prior_* and exp_4_1_2_quadratic_* are
+                 the same problem; the _MC / _test_v1 variants are stale
+                 hyperparameter copies, not new math).
+2026-07-09 (3)   D2 amendment: preimage-covering training box (P1).
+2026-07-09 (2)   Route 2 extrapolates too; one box fix cures both.
+2026-07-09 (1)   Route-1 failure first re-diagnosed (later corrected: R1).
+2026-07-09       D2 lr 1e-4 -> 1e-3; quadratic_l1 (2D, 4D) migrated.
+2026-07-08       Phase 2: src/ consolidation; ext/, bin/, .gitignore.
+2026-07-08       Phase 1: verification pass; B1-B4 confirmed numerically at low
+                 dimension before any fixing. CLAUDE.md conventions recorded.

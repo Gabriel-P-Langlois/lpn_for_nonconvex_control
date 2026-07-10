@@ -1,0 +1,89 @@
+\textbf{Proof of (i):} We will prove that $\bu_{PM}(\bx,t,\epsilon)\in\inter(\dom J)$ in two steps. First, we will use the projection operator \eqref{eq:proj_def} (see Definition~\ref{def:projections}) and the posterior mean estimate $\bu_{PM}(\bx,t,\epsilon)$ to prove by contradiction that $\bu_{PM}(\bx,t,\epsilon)\in\cl(\dom J)$. Second, we will use the following variant of the Hahn--Banach theorem for convex body in $\Rn$ to show in fact that $\bu_{PM}(\bx,t,\epsilon)\in\inter(\dom J)$.
+\begin{thm} \label{thm:tech_res_2} (\citep{rockafellar1970convex}, Theorem 11.6 and Corollary 11.6.2)
+Let $C$ be a convex set. A point $\bu\in C$ is a relative boundary point of $C$ if and only if there exist a vector $\boldsymbol{a}\in\Rn\setminus\{\boldsymbol{0}\}$ and a number $b\in\R$ such that 
+\[
+\bu=\argmax_{\by\in C}\left\{\left\langle \boldsymbol{a},\by\right\rangle +b\right\},
+\]
+with $\left\langle \boldsymbol{a},\by\right\rangle +b < \left\langle \boldsymbol{a},\bu\right\rangle +b$ for every $\by \in \inter(C)$.
+\end{thm}
+
+\textbf{Step 1.} Suppose $\bu_{PM}(\bx,t,\epsilon)\notin\cl(\dom J)$. Since the set $\cl(\dom J)$ is closed and convex, the projection of $\bu_{PM}(\bx,t,\epsilon)$ onto $\cl(\dom J)$ given by $\pi_{\mbox{cl}(\mbox{dom }J)}(\bu_{PM}(\bx,t,\epsilon)) \equiv \bar{\bu}$ is well-defined and unique (see Definition \ref{def:projections}), with $\bu_{PM}(\bx,t,\epsilon)\neq\bar{\bu}$ by assumption. The projection $\bar{\bu}$ also satisfies the characterization \eqref{eq:proj_char}, namely
+\[
+\left\langle \bu_{PM}(\bx,t,\epsilon)-\bar{\bu},\by-\bar{\bu})\right\rangle \leqslant0
+\]
+for every $\by\in\cl(\dom J)$. Then, by linearity of the posterior mean estimate,
+\begin{equation*}
+\begin{alignedat}{1}
+\left\Vert \bu_{PM}(\bx,t,\epsilon)-\bar{\bu}\right\Vert_2 ^{2} &= \left\langle\bu_{PM}(\bx,t,\epsilon)-\bar{\bu}, \bu_{PM}(\bx,t,\epsilon)-\bar{\bu}\right\rangle\\
+&= \left\langle\bu_{PM}(\bx,t,\epsilon)-\bar{\bu}, \expectationJ{\by}-\bar{\bu}\right\rangle\\
+&= \expectationJ{\left\langle \bu_{PM}(\bx,t,\epsilon)-\bar{\bu},\by-\bar{\bu}\right\rangle)} \\
+&\leqslant 0,
+\end{alignedat}
+\end{equation*}
+which implies that $\bu_{PM}(\bx,t,\epsilon) = \bar{\bu}$. This contradicts the assumption that $\bu_{PM}(\bx,t,\epsilon)\notin\cl(\dom J)$. Hence, it follows that $\bu_{PM}(\bx,t,\epsilon)\in\cl(\dom J)$.
+
+\textbf{Step 2.} We now wish to prove that $\bu_{PM}(\bx,t,\epsilon) \in \inter(\dom J)$. Note that this inclusion trivially holds if there are no boundary points, i.e., $
+\left(\cl(\dom J) \setminus \inter(\dom J)\right) = \varnothing$. Now we consider the case $\left(\cl(\dom J) \setminus \inter(\dom J)\right) \neq \varnothing$. Suppose that $\bu_{PM}(\bx,t,\epsilon) \in \left(\cl(\dom J) \setminus \inter(\dom J)\right)$. Then Thm~.\ref{thm:tech_res_2} applies and there exist a vector $\boldsymbol{a}\in\Rn\setminus\{\boldsymbol{0}\}$ and a number $b\in\R$ such that 
+\[
+\bu_{PM}(\bx,t,\epsilon)=\argmax_{_{\by\in\cl(\dom J)}}\left\{\left\langle \boldsymbol{a},\by\right\rangle +b\right\},
+\] 
+with $\left\langle \boldsymbol{a},\by\right\rangle +b<\left\langle \boldsymbol{a},\bu_{PM}(\bx,t,\epsilon)\right\rangle +b$ for every $\by\in\inter(\dom J)$. By linearity of the posterior mean estimate,
+\[
+\begin{alignedat}{1}
+\left\langle \boldsymbol{a},\bu_{PM}(\bx,t,\epsilon)\right\rangle +b &= \left\langle \boldsymbol{a},\expectationJ{\by}\right\rangle +b\\
+&= \expectationJ{\left\langle \boldsymbol{a},\by\right\rangle +b} \\
+& < \expectationJ{\left\langle \boldsymbol{a},\bu_{PM}(\bx,t,\epsilon)\right\rangle +b}\\
+& =\left\langle \boldsymbol{a},\bu_{PM}(\bx,t,\epsilon)\right\rangle +b,
+\end{alignedat}
+\]
+where the strict inequality in the third line follows from integrating over $\inter(\dom J)$. This contradicts the assumption that $\bu_{PM}(\bx,t,\epsilon) \in \left(\cl(\dom J) \setminus \inter(\dom J)\right)$. Hence, $\bu_{PM}(\bx,t,\epsilon)\in\inter(\dom J)$.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\textbf{Proof of (ii):} First, as a consequence that $\bu_{PM}(\bx,t,\epsilon) \in \inter(\dom J)$, the subdifferential of $J$ at $\bu_{PM}(\bx,t,\epsilon)$ is non-empty because the subdifferential $\partial J$ is non-empty at every point $\by \in \inter (\dom J)$ (\citep{rockafellar1970convex}, Theorem 23.4). Hence there exists a subgradient $\bp \in \partial J(\bu_{PM}(\bx,t,\epsilon))$ such that
+\begin{equation}\label{eq:conv_ineq_appB}
+    J(\by)\geqslant J(\bu_{PM}(\bx,t,\epsilon))-\left\langle \bp,\by-\bu_{PM}(\bx,t,\epsilon)\right\rangle.
+\end{equation}
+Take the expectation $\expectationJ{\cdot}$ on both sides of inequality~\eqref{eq:conv_ineq_appB} to find
+\begin{equation}\label{eq:ineq1_appB}
+\begin{alignedat}{1}
+    \expectationJ{J(\by)} &\geqslant \expectationJ{J(\bu_{PM}(\bx,t,\epsilon))-\left\langle \bp,\by-\bu_{PM}(\bx,t,\epsilon)\right\rangle} \\
+    &= J(\bu_{PM}(\bx,t,\epsilon))-\expectationJ{\left\langle \bp,\by-\bu_{PM}(\bx,t,\epsilon)\right\rangle}\\
+    &= J(\bu_{PM}(\bx,t,\epsilon))-\left\langle \bp,\expectationJ{\by}-\bu_{PM}(\bx,t,\epsilon)\right\rangle \\
+    &= J(\bu_{PM}(\bx,t,\epsilon))-\left\langle \bp,\bu_{PM}(\bx,t,\epsilon)-\bu_{PM}(\bx,t,\epsilon)\right\rangle  \\
+    &= J(\bu_{PM}(\bx,t,\epsilon)).
+\end{alignedat}
+\end{equation}
+This gives the lower bound of inequality~\eqref{eq:bounds_J}.
+
+Second, use the convex inequality $1+z\leqslant e^{z}$ that holds on $\R$ with $z \equiv J(\by)/\epsilon$ for $\by\in\dom J$. This gives the inequality $1 + \frac{1}{\epsilon}J(\by) \leqslant e^{J(\by)/\epsilon}$. Multiply this inequality by $e^{-J(\by)/\epsilon}$ and subtract by $e^{-J(\by)/\epsilon}$ on both sides to find 
+\begin{equation}\label{eq:J_ineq1_appB}
+\frac{1}{\epsilon}J(\by)e^{-J(\by)/\epsilon} \leqslant (1-e^{-J(\by)/\epsilon}).
+\end{equation}
+Multiply both sides by $e^{-\frac{1}{2t\epsilon}\left\Vert \bx-\by\right\Vert _{2}^{2}}$, divide by the partition function $Z_J(\bx,t,\epsilon)$ (see Eq.~\eqref{eq:partition_function}), integrate with respect to $\by \in \dom J$, and use
+\begin{equation*}
+\frac{1}{Z_J(\bx,t,\epsilon)}\int_{\dom J} \frac{1}{\epsilon}J(\by)e^{-\left(\frac{1}{2t}\normsq{\bx-\by} +J(\by)\right)/\epsilon} \diff\by = \frac{1}{\epsilon}\expectationJ{J(\by)}
+\end{equation*}
+to obtain
+\begin{equation}\label{eq:J_ineq2_appB}
+\frac{1}{\epsilon}\expectationJ{J(\by)} \leqslant 
+\frac{1}{Z_J(\bx,t,\epsilon)}\int_{\dom J} \left(e^{-\frac{1}{2t}\normsq{\bx-\by}/\epsilon} - e^{-\left(\frac{1}{2t}\normsq{\bx-\by} +J(\by)\right)/\epsilon}\right) \diff \by.
+\end{equation}
+Now, we can bound the right hand side of~\eqref{eq:J_ineq2_appB} as follows
+\begin{equation}\label{eq:J_ineq3_appB}
+\begin{alignedat}{1}
+\frac{1}{Z_J(\bx,t,\epsilon)}\int_{\dom J} \left(e^{-\frac{1}{2t}\normsq{\bx-\by}/\epsilon} - e^{-\left(\frac{1}{2t}\normsq{\bx-\by} +J(\by)\right)/\epsilon}\right) \diff \by &= \frac{1}{Z_J(\bx,t,\epsilon)}\int_{\dom J} e^{-\frac{1}{2t}\normsq{\bx-\by}/\epsilon} \diff \by \\
+&\quad - \frac{1}{Z_J(\bx,t,\epsilon)}\int_{\dom J} e^{-\left(\frac{1}{2t}\normsq{\bx-\by} +J(\by)\right)/\epsilon} \diff \by  \\
+&\leqslant \frac{1}{Z_J(\bx,t,\epsilon)}\int_{\Rn} e^{-\frac{1}{2t}\normsq{\bx-\by}/\epsilon} \diff \by - 1 \\
+&= \frac{(2\pi t\epsilon)^{n/2}}{Z_J(\bx,t,\epsilon)} - 1.
+\end{alignedat}
+\end{equation}
+Combining~\eqref{eq:J_ineq2_appB} and~\eqref{eq:J_ineq3_appB}, we get
+\begin{equation}\label{eq:J_ineq4_appB}
+\expectationJ{J(\by)} \leqslant \epsilon\left(\frac{(2\pi t\epsilon)^{n/2}}{Z_J(\bx,t,\epsilon)} - 1\right).
+\end{equation}
+Using the representation formula~\eqref{eq:hj_s_eps} for the solution $(\bx,t) \mapsto S_\epsilon$ to the viscous HJ PDE~\eqref{eq:hj_visc_pde}, we have that $(2\pi t\epsilon)^{n/2}/Z_J(\bx,t,\epsilon) = e^{S_\epsilon(\bx,t)/\epsilon}$. We can therefore write~\eqref{eq:J_ineq4_appB} as follows
+\[
+\expectationJ{J(\by)} \leqslant \epsilon\left(e^{S_\epsilon(\bx,t)/\epsilon} - 1\right) < +\infty.
+\]
+Combining the latter inequalities with~\eqref{eq:ineq1_appB} we obtain the desired set of inequalities~\eqref{eq:bounds_J}.

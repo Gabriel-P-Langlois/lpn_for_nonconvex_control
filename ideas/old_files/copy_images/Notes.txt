@@ -1,0 +1,9 @@
+rng(2,'v5normal');
+
+% Variables - scale, noise, and smoothing parameters
+scale = 255;          % grayscale =[0,255];
+sigma = 20/scale;
+lambda = 40/scale;
+alpha_ind = [0.35,0.65];
+
+m = 100000; R = size^2;   % #Samples= m*n

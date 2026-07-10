@@ -1,0 +1,212 @@
+\section{Properties of posterior mean and MAP estimators} \label{sec:properties_estimators}
+
+In this section, we describe various properties of the Bayesian posterior mean estimate~\eqref{eq:pm_estimate} in terms of the data $\bx \in \Rn$, parameters $t>0$ and $\epsilon>0$, and the imaging regularization term $J$. Specifically, in Section~\ref{subsec:prop_topo-rep-mono}, we derive topological, representation, and monotonicity properties of the posterior mean estimate, which we use in Section~\ref{subsec:prop_bounds-est} to further derive an optimal upper bound on the mean squared error $\expectationJ{\normsq{\by-\bu_{PM}(\bx,t,\epsilon)}}$, an estimate of the squared difference between the MAP and posterior mean estimates, monotone and non-expansive properties of the posterior mean estimate, and the behavior of the posterior mean estimate $\bu_{PM}(\bx,t,\epsilon)$ in the limit $t \to 0$. Finally, we describe the MAP and posterior mean estimates in terms of Bayes risks and their connections to HJ PDEs in Sect.~\ref{subsec:prop_breg_div}.
+
+
+\subsection{Topological, representation, and monotonicity properties} \label{subsec:prop_topo-rep-mono}
+This section describes the topological, representation, and monotonicity properties of the Bayesian posterior mean estimate~\eqref{eq:pm_estimate}, which are stated, respectively, in Propositions~\ref{prop:topo_properties}, \ref{prop:pm_rep_props}, and \ref{prop:mono_properties}.
+
+The first result, Proposition~\ref{prop:topo_properties}, states that the posterior mean estimate belongs in the interior of the domain of $J$ for all data $\bx \in \Rn$ and parameters $t>0$ and $\epsilon>0$.
+\begin{prop}[Topological properties] \label{prop:topo_properties}
+Suppose the function $J$ satisfies assumptions (A1)-(A3). Then the following properties hold.
+\begin{enumerate}
+    \item[(i)] For every $\bx\in\Rn$, $t>0$, and $\epsilon>0$, the posterior mean estimate $\bu_{PM}(\bx,t,\epsilon)$ is contained in $\inter(\dom J)$.
+    
+    \item[(ii)] Let $\bx\in\Rn$, $t>0$, and $\epsilon>0$, and let $S_\epsilon\colon \Rn\times(0,+\infty) \to \R$ denote the solution to the viscous HJ PDEs~\eqref{eq:hj_visc_pde} with initial data $J$. Then the expected value of the initial data $\expectationJ{J(\by)}$ satisfies the bounds
+    \begin{equation}\label{eq:bounds_J}
+    0 \leqslant J(\bu_{PM}(\bx,t,\epsilon))\leqslant \expectationJ{J(\by)} < \epsilon\left(e^{S_\epsilon(\bx,t)/\epsilon} - 1\right) < +\infty.
+    \end{equation}
+\end{enumerate}
+\end{prop}
+\begin{proof}
+See Appendix~\ref{app:topo}.
+\end{proof}
+
+The second result, Proposition~\ref{prop:pm_rep_props}, gives representation formulas for the posterior mean estimate. In particular, when the regularization term $J$ satisfies assumptions (A1)-(A3) and $\dom J = \Rn$, the posterior mean estimate and mean squared error then satisfy representation formulas in terms of the mean minimal subgradient of $J$ given by $\expectationJ{\pi_{\partial J(\by)}(\boldsymbol{0})}$. These representation formulas are then used to show that when $\dom J \neq \Rn$, the posterior mean estimate can nonetheless be approximated using the first-order HJ PDE~\eqref{eq:hj_non_visc_pde} by smoothing the initial $J$ via a Moreau--Yosida approximation $S_0(\bx,\mu)$ for any $\mu >0$.
+
+\begin{prop}[Representation properties]\label{prop:pm_rep_props}
+Suppose the function $J$ satisfies assumptions (A1)-(A3), let $\bx\in\Rn$, $t>0$, and $\epsilon>0$, and let $(\bx,t) \mapsto S_0(\bx,t)$ and $(\bx,t) \mapsto S_\epsilon(\bx,t)$ denote the solutions, respectively, to the first-order and viscous HJ PDEs~\eqref{eq:hj_non_visc_pde} and \eqref{eq:hj_visc_pde} with initial data $J$.
+\begin{enumerate}
+
+\item[(i)] (Representation formulas) If $\dom J = \Rn$, then $\expectationJ{\normtwo{\pi_{\partial J(\by)}(\boldsymbol{0})}} < +\infty$, for every $\by_0 \in \Rn$ we have
+\beq\label{eq:diff_mono_rep}
+\expectationJ{\left\langle\left(\frac{\by-\bx}{t}\right) + \pi_{\partial J(\by)}(\boldsymbol{0}), \by-\by_0 \right\rangle} = n\epsilon,
+\eeq
+and the posterior mean estimate $\bu_{PM}(\bx,t,\epsilon)$ and mean squared error $\expectationJ{\normsq{\by-\bu_{PM}(\bx,t,\epsilon)}}$ of the Bayesian posterior distribution~\eqref{eq:prob_dist_j} satisfy the representation formulas
+\begin{equation} \label{eq:diff_pm_rep}
+    \bu_{PM}(\bx,t,\epsilon) = \bx -t\expectationJ{\pi_{\partial J(\by)}(\boldsymbol{0})}
+\end{equation}
+and
+\begin{equation} \label{eq:diff_var_rep}
+    \expectationJ{\normsq{\by-\bu_{PM}(\bx,t,\epsilon)}} = nt\epsilon - t\expectationJ{\left \langle \pi_{\partial J(\by)}(\boldsymbol{0}), \by - \bu_{PM}(\bx,t,\epsilon) \right \rangle}.
+\end{equation}
+Moreover, the gradient $\nabla_{\bx}S_\epsilon(\bx,t)$ and Laplacian $\Laplacian S_\epsilon(\bx,t)$ satisfy the representation formulas
+\beq \label{eq:diff_seps_rep}
+\nabla_{\bx}S_\epsilon(\bx,t) = \expectationJ{\pi_{\partial J(\by)}(\boldsymbol{0})}
+\eeq
+and
+\beq \label{eq:diff_laplacian_rep}
+\Laplacian S_{\epsilon}(\bx,t) = \frac{1}{t\epsilon}\expectationJ{\left \langle \pi_{\partial J(\by)}(\boldsymbol{0}), \by - \bu_{PM}(\bx,t,\epsilon) \right \rangle}.
+\eeq
+
+\item[(ii)] (Limit formulas) Let $\{\mu_{k}\}_{k=1}^{+\infty}$ be a sequence of positive real numbers decreasing to zero. The solution $S_\epsilon(\bx,t)$ to the viscous HJ PDE~\eqref{eq:hj_visc_pde} and its gradient $\nabla_{\bx}S_\epsilon(\bx,t)$ satisfy the limits
+\beq\label{eq:sol_approx_limit}
+\begin{alignedat}{1}
+S_\epsilon(\bx,t) &\coloneqq -\epsilon\ln\left(\frac{1}{\left(2\pi t\epsilon\right)^{n/2}}\int_{\Rn}e^{-\left(\frac{1}{2t}\left\Vert \bx-\by\right\Vert _{2}^{2}+J(\by)\right)/\epsilon}\diff\by\right) \\
+&= \lim_{k\to +\infty} -\epsilon\ln\left(\frac{1}{\left(2\pi t\epsilon\right)^{n/2}}\int_{\Rn}e^{-\left(\frac{1}{2t}\left\Vert \bx-\by\right\Vert _{2}^{2}+S_0(\by,\mu_k)\right)/\epsilon}\diff\by\right)
+\end{alignedat}
+\eeq
+and
+\beq\label{eq:seps_approx_limit}
+\nabla_{\bx} S_\epsilon(\bx,t) = \lim_{k\to +\infty}\left(\frac{\int_{\Rn} \nabla_{\by}S_0(\by,\mu_k)e^{-\left(\frac{1}{2t}\normsq{\bx-\by} + S_0(\by,\mu_k)\right)/\epsilon}\diff\by}{\int_{\Rn} e^{-\left(\frac{1}{2t}\normsq{\bx-\by} + S_0(\by,\mu_k)\right)/\epsilon}\diff\by}\right).
+\eeq
+In particular, the posterior mean estimate $\bu_{PM}(\bx,t,\epsilon)$ satisfies the limits
+\begin{equation} \label{eq:approx_limit}
+\begin{alignedat}{1}
+    \bu_{PM}(\bx,t,\epsilon) &= \lim_{k\to +\infty}\left(\frac{\int_{\Rn} \by e^{-\left(\frac{1}{2t}\normsq{\bx-\by} + S_0(\by,\mu_k)\right)/\epsilon}\diff\by}{\int_{\Rn} e^{-\left(\frac{1}{2t}\normsq{\bx-\by} + S_0(\by,\mu_k)\right)/\epsilon}\diff\by}\right)\\
+    &= \bx - t\lim_{k\to +\infty}\left(\frac{\int_{\Rn} \nabla_{\by}S_0(\by,\mu_k)e^{-\left(\frac{1}{2t}\normsq{\bx-\by} + S_0(\by,\mu_k)\right)/\epsilon}\diff\by}{\int_{\Rn} e^{-\left(\frac{1}{2t}\normsq{\bx-\by} + S_0(\by,\mu_k)\right)/\epsilon}\diff\by}\right),
+\end{alignedat}
+\end{equation}
+\end{enumerate}
+\end{prop}
+
+\begin{proof}
+See Appendix~\ref{app:rep} for the proof.
+\end{proof}
+
+\begin{rem}
+Note that the representation formulas in Proposition~\ref{prop:pm_rep_props}(ii) may not hold if $\dom J \neq \Rn$. To see this, consider $J:\Rn\to\R\cup\{+\infty\}$ defined by
+\begin{equation*}
+J(\by) =
+\begin{dcases}
+0, & \textrm{if } \left\Vert \by \right\Vert_2 \leqslant 1,\\
++\infty, & \textrm{otherwise}.
+\end{dcases}
+\end{equation*}
+Then the domain of $J$ is the unit sphere in $\Rn$, which is convex, and $J$ satisfies assumptions (A1)-(A3). The function $J$ is continuously differentiable in $\inter(\dom J)$, with $\nabla J(\by) = \boldsymbol{0}$ for every $\by\in\inter(\dom J)$. Clearly, $\expectationJ{\pi_{\partial J(\by)}(\boldsymbol{0})} = 0$. However, for every $\bx \neq \boldsymbol{0}$, the posterior mean estimate $\bu_{PM}(\bx,t,\epsilon) \neq \bx$. Hence, the representation formula~\eqref{eq:diff_pm_rep} does not hold in that case.
+\end{rem}
+
+The next result, Prop.~\ref{prop:mono_properties}, uses the properties of solutions to first-order HJ PDEs presented in Prop.~\ref{thm:e_u_nonvisc_hj} together with the representation formulas~\eqref{eq:diff_pm_rep} and \eqref{eq:diff_var_rep} to describe monotonicity properties of the posterior mean estimate. Prop.~\ref{prop:mono_properties} will be leveraged in the next subsection to derive an optimal upper bound for the mean squared error $\expectationJ{\normsq{\by-\bu_{PM}(\bx,t,\epsilon)}}$ and several estimates and limit results of $\bu_{PM}(\bx,t,\epsilon)$ in terms of the observed image $\bx$ and parameter $t>0$. 
+
+For the statement and proof of Prop.~\ref{prop:mono_properties}, and later for Prop.~\ref{thm:bregman_div}, we define the function
+\begin{equation*}
+    \dom\partial J \ni \by \mapsto \varphi_J(\by|\bx,t) = \left(\frac{\by-\bx}{t}\right) + \pi_{\partial J(\by)}(\boldsymbol{0}),
+\end{equation*}
+which is a subgradient of the convex function $\by \ni \by \mapsto \frac{1}{2t}\normsq{\bx-\by} + J(\by)$ for every $\by \in \dom\partial J$.
+
+\begin{prop}[Monotonicity property] \label{prop:mono_properties}
+Suppose the function $J$ is strongly convex of parameter $m\geqslant0$ (with $m=0$ corresponding to the definition of convexity) and satisfies assumptions (A1)-(A3). Let $\bx\in\Rn$, $t>0$, and $\epsilon>0$. Then for every $\by_0 \in \dom\partial J$,
+\begin{equation}  \label{eq:monotonicity_prop}
+\left(\frac{1+mt}{t}\right)\expectationJ{\normsq{\by-\by_{0}}} \leqslant \expectationJ{\left\langle \varphi_J(\by|\bx,t)-\varphi_J(\by_0|\bx,t),\by-\by_{0}\right\rangle} \leqslant n\epsilon -\left\langle \varphi_J(\by_0|\bx,t), \bu_{PM}(\bx,t,\epsilon) - \by_0 \right\rangle.
+\end{equation}
+Moreover, $\expectationJ{\normtwo{\pi_{\partial J(\by)}(\boldsymbol{0})}} < +\infty$.
+\end{prop}
+
+\begin{proof}
+See Appendix~\ref{app:mono} for the proof.
+\end{proof}
+
+\subsection{Error Bounds and limit properties} \label{subsec:prop_bounds-est}
+
+In this section, we derive an optimal bound for the mean squared error $\expectationJ{\normsq{\by-\bu_{PM}(\bx,t,\epsilon)}}$, a bound on the squared difference between the MAP and posterior mean estimates, monotone and non-expansive properties of the posterior mean estimate, and limiting results of the posterior mean estimate in terms of the parameters $t$.
+
+\begin{prop}[Error Bounds and limit properties] \label{prop:bounds_limits}
+Suppose $J$ satisfies assumptions (A1)-(A3), and suppose that it is strongly convex of parameter $m \geqslant 0$ (with $m = 0$ corresponding to the definition of convexity).
+
+\begin{itemize}
+    \item[(i)] For every $\bx \in \Rn$, $t>0$, and $\epsilon>0$, the mean squared error $\expectationJ{\normsq{\by-\bu_{PM}(\bx,t,\epsilon)}}$ of the Bayesian posterior distribution~\eqref{eq:prob_dist_j} satisfies the upper bound 
+    \begin{equation} \label{eq:mono_var_ub}
+        \expectationJ{\normsq{\by-\bu_{PM}(\bx,t,\epsilon)}} \leqslant \frac{nt\epsilon}{1+mt}.
+    \end{equation}
+
+    \item[(ii)] For every $\bx \in \Rn$, $t>0$, and $\epsilon>0$, the squared difference between the MAP and posterior mean estimates satisfies the upper bound
+    \begin{equation} \label{eq:difference_pm_map}
+        \normsq{\bu_{MAP}(\bx,t)-\bu_{PM}(\bx,t,\epsilon)} \leqslant \frac{nt\epsilon}{1+mt}.
+    \end{equation}
+    
+    \item[(iii)] The posterior mean estimate is monotone and non-expensive, that is, for every $\bx$, $\boldsymbol{d} \in \Rn$, $t>0$, and $\epsilon>0$,
+    \begin{equation} \label{eq:upm_monotone}
+        \left\langle \bu_{PM}(\bx + \boldsymbol{d},t,\epsilon) - \bu_{PM}(\bx,t,\epsilon), \boldsymbol{d} \right\rangle \geqslant 0
+    \end{equation}
+    and
+    \begin{equation} \label{eq:lipschitz_cts}
+         \left\Vert\bu_{PM}(\bx + \boldsymbol{d},t,\epsilon) -\bu_{PM}(\bx,t,\epsilon)\right\Vert_2  \leqslant \left\Vert \boldsymbol{d}\right\Vert_2.
+    \end{equation}
+    \item[(iv)] Let $\{t_k\}_{k=1}^{+\infty}$ be a sequence of positive real numbers converging to $0$ and let $\{\boldsymbol{d}_k\}_{k=1}^{+\infty}$ be a sequence of elements of $\Rn$ converging to $\boldsymbol{d} \in \Rn$. Then for every $\bx \in \dom J$ and $\epsilon>0$, the pointwise limit of $\bu_{PM}(\bx + t_k\boldsymbol{d}_k,t_k,\epsilon)$ as $k\to +\infty$ exists and satisfies
+    \[
+        \lim_{k \to +\infty} \bu_{PM}(\bx + t_k\boldsymbol{d}_k,t_k,\epsilon) = \bx.
+    \]
+\end{itemize}
+\end{prop}
+
+\begin{proof}
+\textbf{Proof of (i):}  Since $\bu_{PM}(\bx,t,\epsilon) \in \inter(\dom J)$ by Proposition~\ref{prop:topo_properties} and $\inter(\dom J) \subset \dom \partial J$ (see Definition~\ref{def:subgrad}), we can set $\by_0 = \bu_{PM}(\bx,t,\epsilon)$ in the monotonicity inequality~\eqref{eq:monotonicity_prop} in Proposition~\ref{prop:mono_properties}(i) and rearrange to get the upper bound~\eqref{eq:mono_var_ub}.
+
+\textbf{Proof of (ii):}  Note that for every $\by_0 \in \dom\partial J$, the monotonicity inequality~\eqref{eq:monotonicity_prop} in Proposition~\ref{prop:mono_properties} yields
+\[
+\expectationJ{\left\langle \left(\frac{\by - \bx}{t} + \pi_{\partial J(\by)}(\boldsymbol{0})\right),\by-\by_{0}\right\rangle} \leqslant n\epsilon.
+\]
+Choose $\by_0 = \bu_{MAP}(\bx,t)$, which for every $\bx$ and $t>0$ is always an element of $\dom \partial J$ and also satisfies the inclusion $\left(\frac{\bx-\bu_{MAP}(\bx,t)}{t}\right) \in \partial J(\bu_{MAP}(\bx,t))$ by part (ii) of Prop.~\ref{thm:e_u_nonvisc_hj}. Hence the monotonicity of the subdifferential of $\by \mapsto \frac{1}{2t}\normsq{\bx-\by} + J(\by)$ and strong convexity of $J$ of parameter $m\geqslant0$ implies
+\[
+\left(\frac{1+mt}{t}\right)\normsq{\by-\bu_{MAP}(\bx,t)} \leqslant \left\langle \left(\frac{\bx - \by}{t} + \pi_{\partial J(\by)}(\boldsymbol{0})\right),\by-\bu_{MAP}(\bx,t)\right\rangle.
+\]
+Combine these inequalities to get $\expectationJ{\normsq{\by-\bu_{MAP}(\bx,t)}} \leqslant \frac{nt\epsilon}{1+mt}$, and use the convexity of the Euclidean norm to get inequality~\eqref{eq:difference_pm_map}.
+
+\textbf{Proof of (iii):} The convexity of $\bx \mapsto K_{\epsilon}(\bx,t)$ by Prop.~\ref{thm:visc_hj_eqns}(ii)(d) and $\nabla_{\bx}K_{\epsilon}(\bx,t) = \bu_{PM}(\bx,t,\epsilon)$ implies the monotone property~\eqref{eq:upm_monotone} (see definition~\ref{def:subgrad}, equation~\eqref{eq:monotone_mapping}, and \cite{rockafellar1970convex}, page 240 and Corollary 31.5.2). Since both functions $\bx \mapsto S_\epsilon(\bx,t)$ and $\bx \mapsto \frac{1}{2}\normsq{\bx} - tS_\epsilon(\bx,t)$ are convex by Prop.~\ref{thm:visc_hj_eqns}(ii)(a) and (d), the gradient of the function $\bx \mapsto \frac{1}{2}\normsq{\bx} - tS_\epsilon(\bx,t)$, whose value is the posterior mean estimate $\bu_{PM}(\bx,t,\epsilon)$ by Prop.~\ref{thm:visc_hj_eqns}(iii), is Lipschitz continuous with unit constant (see \cite{zhou2018fenchel} for a simple proof), that is,
+\[
+\left\Vert \left(\bx+\boldsymbol{d} - t\nabla_{\bx}S_\epsilon(\bx+\boldsymbol{d},t)\right) - \left(\bx - t\nabla_{\bx}S_\epsilon(\bx,t)\right) \right\Vert_2 \equiv \left\Vert\bu_{PM}(\bx+\boldsymbol{d},t,\epsilon) - \bu_{PM}(\bx,t,\epsilon)\right\Vert_2 \leqslant \left\Vert\boldsymbol{d}\right\Vert_2,
+\]
+which proves the non-expensive inequality~\eqref{eq:lipschitz_cts}.
+
+\textbf{Proof of (iv):} Inequality~\eqref{eq:difference_pm_map} and the triangle inequality imply
+\begin{equation*}
+\left\Vert (\bx + t_k\boldsymbol{d}_k)- \bu_{PM}(\bx + t_k\boldsymbol{d}_k,t_k,\epsilon)\right\Vert_{2} \leqslant \left\Vert (\bx + t_k\boldsymbol{d}_k) - \bu_{MAP}(\bx + t_k\boldsymbol{d}_k,t_k)\right\Vert_{2} + \sqrt{\frac{nt_k\epsilon}{1+mt}}.
+\end{equation*}
+The limit $\lim_{k \to +\infty} \bu_{PM}(\bx + t_k\boldsymbol{d}_k,t_k,\epsilon) = \bx$ then follows by Prop.~\ref{thm:e_u_nonvisc_hj}(iii).
+\end{proof}
+
+\begin{rem}
+The upper bound for the mean squared error in \eqref{eq:mono_var_ub} is optimal. As shown in Example~\ref{example:tikhonov}, it is attained for the quadratic term $J(\bx) = \frac{m}{2}\normsq{\bx}$. 
+\end{rem}
+
+\subsection{Bayesian risks and Hamilton--Jacobi partial differential equations} \label{subsec:prop_breg_div}
+
+In this section, we will consider the Bayesian risk associated to the following Bregman divergence (see Definition~\ref{def:breg_div})
+\begin{equation}\label{eq:breg2}
+\Rn\times\Rn \ni (\bu, \by) \mapsto
+\begin{cases}
+D_{\Phi_{J}}(\bu,\varphi_{J}(\by|\bx,t)) & \text{if } \by \in \dom \partial J,\\
++\infty & \text{otherwise,}
+\end{cases}
+\end{equation}
+where 
+\begin{equation*}
+    \dom\partial J \ni \by \mapsto \varphi_J(\by|\bx,t) = \left(\frac{\by-\bx}{t}\right) + \pi_{\partial J(\by)}(\boldsymbol{0}),
+\end{equation*}
+\[
+\Rn \ni \by \mapsto \Phi_J(\by|\bx,t) = \frac{1}{2t}\normsq{\bx-\by} + J(\by).
+\]
+The associated Bayesian risk to the posterior distribution~\eqref{eq:prob_dist_j} corresponds to the expected value $\expectationJ{D_{\Phi_{J}}(\bu,\varphi_{J}(\by|\bx,t))}$. We refer the reader to \cite{banerjee2005optimality} and \cite{keener2011theoretical} for discussions on Bregman loss functions and Bayesian estimation theory.
+
+Here, we will use the connections between maximum a posteriori and posterior mean estimates and Hamilton--Jacobi equations derived in Section~\ref{sec:connections} to show that when the regularization term $J$ is convex on $\Rn$ and bounded from below, then the MAP estimate $\bu_{MAP}(\bx,t)$ minimizes in expectation the Bregman loss function~\eqref{eq:breg2}. We also show that when $\dom J \neq \Rn$ and satisfies assumptions (A1)-(A3). The results rely on the monotonicity property~\eqref{eq:monotonicity_prop} established in Prop.~\eqref{prop:mono_properties}.
+
+\begin{prop}[Bregman divergences] \label{thm:bregman_div}
+Suppose the function $J$ satisfies assumptions (A1)-(A3), and let $\bx\in\Rn$, $t>0,$ and $\epsilon>0$.
+\begin{enumerate}
+
+\item[(i)] The mean Bregman loss function  $\dom J\ni\bu\mapsto\expectationJ{D_{\Phi_{J}}(\bu,\varphi_{J}(\by|\bx,t))} \in \R$ has a unique minimizer $\bar{\bu}\in\dom\partial J$ that satisfies the inclusion
+\begin{equation} \label{eq:subdiff_rep1}
+\left(\frac{\bx-\bar{\bu}}{t}\right) \in \partial J(\bar{\bu}) + \left( \nabla_{\bx}S_\epsilon(\bx,t) - \expectationJ{\pi_{\partial J(\by)}(\boldsymbol{0})}\right),
+\end{equation}
+where addition in \eqref{eq:subdiff_rep1} is taken in the sense of sets.
+
+\item[(ii)] If $J$ is finite everywhere on $\Rn$, then the MAP estimate $\bu_{MAP}(\bx,t)$ is the unique global minimizer of the Bregman loss function $\Rn \ni \bu\mapsto\expectationJ{D_{\Phi_{J}}(\bu,\varphi_{J}(\by|\bx,t))} \in \R$, that is,
+\begin{equation} \label{eq:map_est_bregman}
+    \bu_{MAP}(\bx,t) = \argmin_{\bu \in \Rn} \expectationJ{D_{\Phi_{J}}(\bu,\varphi_{J}(\by|\bx,t))}
+\end{equation}
+\end{enumerate}
+\end{prop}
+
+\begin{proof}
+See Appendix~\ref{app:breg} for the proof.
+\end{proof}
