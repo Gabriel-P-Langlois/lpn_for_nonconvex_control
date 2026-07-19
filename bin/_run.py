@@ -80,7 +80,8 @@ def run(
     x_te = uniform_inputs(dim, n_test, a, seed=3)  # queries: the ORIGINAL box
     psi_tr, psi_va = problem.cvx_true(x_tr), problem.cvx_true(x_va)
     print(f"[{name}] query box +-{a:g}, psi train box +-{train_a:g}, "
-          f"N={n_train} (=15000*d), {steps} steps (~{steps*batch_size/n_train:.0f} epochs)")
+          f"N={n_train} (={n_train/dim:g}*d), {steps} steps "
+          f"(~{steps*batch_size/n_train:.0f} epochs)")
 
     # --- first network: the convex potential psi ---
     print(f"[{name}] training psi network (dim {dim}, hidden {hidden})")
@@ -132,9 +133,13 @@ def run(
         )
         per_alpha[al] = route_report(r1_a, true_s, xs, y1_a, model, model_G)
 
-    # Zero-cost divergence tripwire: the exact preimage cannot leave the psi
-    # training box, so max|y|_inf >> train_a means the solve ran away.
-    diverged = {al: rp["max_preimage_linf"] > 1.5 * train_a
+    # Zero-cost divergence tripwire. The exact preimage of the query box obeys
+    # problem.preimage_bound(a); a solve that leaves it by 50% has run away.
+    # We test against that analytic bound, NOT against train_a: the two agree
+    # for the expanding families but train_a is 2x too loose for ConcaveQuad
+    # (bound a/2 = 2, box 4), which would leave the tripwire 3x too permissive.
+    pre_bound = problem.preimage_bound(a)
+    diverged = {al: rp["max_preimage_linf"] > 1.5 * pre_bound
                 for al, rp in per_alpha.items()}
 
     # Diverged runs are EXCLUDED, not merely ranked. Taking the plain min over
@@ -142,10 +147,13 @@ def run(
     # d=16 the alpha=0 solve ran to max|y|=10.94 (bound 5) yet scored 0.667
     # against the regularized run's 0.800, so a plain min would report a
     # meaningless number. If every alpha diverges we report the failure rather
-    # than a number.
+    # than a number: prior_rmse_route1 is None, not the min over the diverged
+    # runs -- that fallback would silently reinstate the rule this comment
+    # disavows, and the summary table has no column to catch it.
     ok = [al for al in per_alpha if not diverged[al]]
     all_diverged = not ok
-    alpha_best = min(ok or per_alpha, key=lambda k: per_alpha[k]["rmse"])
+    alpha_best = (min(ok, key=lambda k: per_alpha[k]["rmse"]) if ok else
+                  min(per_alpha, key=lambda k: per_alpha[k]["rmse"]))
     rep1 = per_alpha[alpha_best]
 
     r2 = evaluate_learned_prior_G(xs, model_G)
@@ -158,6 +166,7 @@ def run(
         "hidden": hidden,
         "query_halfwidth": float(a),
         "train_halfwidth": float(train_a),
+        "preimage_bound": float(pre_bound),
         "n_train": int(n_train),
         "steps": int(steps),
         "invert_alphas": list(alphas),
@@ -169,9 +178,15 @@ def run(
         # weights, so the last epoch's val MSE describes a discarded model.
         "psi_val_mse": hist_psi["best_val"],
         "G_val_mse": hist_G["best_val"],
-        # unconditional RMSE, all queries, both routes
-        "prior_rmse_route1": rep1["rmse"],
+        # unconditional RMSE, all queries, both routes. None when every Route-1
+        # solve diverged: there is no trustworthy number to report.
+        "prior_rmse_route1": None if all_diverged else rep1["rmse"],
         "prior_rmse_route2": rep2["rmse"],
+        # How far the reported Route-1 solve pushed psi_theta past the exact
+        # preimage bound. >1 means psi was extrapolated at some query, which is
+        # not divergence but is worth knowing; the tripwire only fires at 1.5.
+        "route1_preimage_excess": rep1["max_preimage_linf"] / pre_bound,
+        "route2_preimage_excess": rep2["max_preimage_linf"] / pre_bound,
         # the same certificate for each route
         "route1_median_prox_residual": rep1["median_prox_residual"],
         "route2_median_prox_residual": rep2["median_prox_residual"],
@@ -188,6 +203,15 @@ def run(
         print(f"[{name}] WARNING: {frac_q_uncovered:.1%} of queries lie outside "
               f"G's training support (max|y_k|_inf = {yk_reach:.2f} < a = {a:g}); "
               f"Route-2 error will be dominated by extrapolation.")
+    if all_diverged:
+        print(f"[{name}] WARNING: every alpha diverged; prior_rmse_route1 = None.")
+    elif metrics["route1_preimage_excess"] > 1.0:
+        # Only meaningful for a solve that did NOT trip the wire: psi_theta is
+        # being evaluated past the exact preimage bound, but by less than 1.5x.
+        print(f"[{name}] NOTE: Route-1 preimage reaches |y|_inf = "
+              f"{rep1['max_preimage_linf']:.2f} vs the exact bound {pre_bound:g} "
+              f"({metrics['route1_preimage_excess']:.2f}x); psi_theta is "
+              f"extrapolated at some query. Not divergence (tripwire is 1.5x).")
 
     # --- convexity sanity: inner weights must stay non-negative after wclip ---
     min_inner_w = min(

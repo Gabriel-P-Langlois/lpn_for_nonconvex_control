@@ -33,13 +33,19 @@ FAMILIES = {
     "minplus": (minplus.config, minplus.DIMS),
 }
 
+# route1_all_alphas_diverged and route1_diverged_per_alpha are NOT optional.
+# Without them a diverged Route-1 RMSE enters the table unmarked and the table
+# cannot be audited from itself -- exactly the failure that once reported a
+# diverged d=16 solve (0.667) as beating a converged one (0.800).
 FIELDS = [
     "name", "dim", "hidden", "n_train", "steps", "query_halfwidth",
-    "train_halfwidth", "invert_alpha_best",
+    "train_halfwidth", "preimage_bound", "invert_alpha_best",
     "psi_val_mse", "G_val_mse", "prior_rmse_route1", "prior_rmse_route2",
     "route1_median_prox_residual", "route2_median_prox_residual",
     "route1_median_fy_gap", "route2_median_fy_gap",
     "route1_max_preimage_linf", "route2_max_preimage_linf",
+    "route1_preimage_excess", "route2_preimage_excess",
+    "route1_all_alphas_diverged", "route1_diverged_per_alpha",
     "route2_frac_query_uncovered", "min_inner_weight", "error",
 ]
 
@@ -98,13 +104,18 @@ def main():
         if r.get("error"):
             print(f"{r['name']:>18} |   FAILED")
             continue
+        mark = "  ALL-DIVERGED" if r.get("route1_all_alphas_diverged") else (
+            "  R1 extrap" if (r.get("route1_preimage_excess") or 0) > 1.0 else "")
         print(f"{r['name']:>18} | {fmt(r['prior_rmse_route1'])} {fmt(r['prior_rmse_route2'])} "
               f"| {fmt(r['route1_median_prox_residual'])} "
               f"{fmt(r['route2_median_prox_residual'])} "
               f"| {r['invert_alpha_best']:6.3g} "
-              f"{fmt(r['route1_max_preimage_linf'], 9, 2)}")
+              f"{fmt(r['route1_max_preimage_linf'], 9, 2)}{mark}")
     n_fail = sum(1 for r in rows if r.get("error"))
+    n_div = sum(1 for r in rows if r.get("route1_all_alphas_diverged"))
     print(f"\n{len(rows) - n_fail}/{len(rows)} succeeded -> {args.out}")
+    if n_div:
+        print(f"{n_div} run(s) had every alpha diverge; their Route-1 RMSE is blank.")
     return 1 if n_fail else 0
 
 

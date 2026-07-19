@@ -28,6 +28,7 @@ import maxplus_case3
 import maxplus_case4
 from _run import uniform_inputs
 from src.network import LPN
+from src.recovery import recover_prior_route1, evaluate_learned_prior_G
 from src.plotting import plot_cross_sections
 from src.diagnostics import (
     plot_conditional_cross_section,
@@ -62,21 +63,16 @@ def load(name, which):
     return m
 
 
-def main():
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--family", required=True, choices=list(FAMILIES))
-    ap.add_argument("--dim", type=int, required=True)
-    ap.add_argument("--a", type=float, default=4.0)
-    ap.add_argument("--n-eval", type=int, default=1000)
-    ap.add_argument("--invert-iters", type=int, default=20000,
-                    help="Route-1 inversion budget for the figures; lower is faster "
-                         "but changes Route 1's curve, so keep the run's value")
-    ap.add_argument("--open", action="store_true", help="open the figures (macOS)")
-    args = ap.parse_args()
+def render(family, dim, name=None, a=4.0, n_eval=1000, invert_iters=20000):
+    """Regenerate every diagnostic figure for one saved run; return the paths.
 
-    name = f"{args.family}_{args.dim}D"
-    problem = FAMILIES[args.family](args.dim)
-    train_a = problem.train_halfwidth(args.a)
+    Importable entry point (the notebooks in ../notebooks/ call this); the CLI
+    below is a thin wrapper. Reads logs/ckpt/<name>_{psi,G}.pth and, if present,
+    <name>_metrics.json for the run's chosen alpha; writes logs/<name>_*.png.
+    """
+    name = name or f"{family}_{dim}D"
+    problem = FAMILIES[family](dim)
+    train_a = problem.train_halfwidth(a)
     psi, G = load(name, "psi"), load(name, "G")
 
     mpath = os.path.join(LOGS, f"{name}_metrics.json")
@@ -86,35 +82,55 @@ def main():
             alpha = float(json.load(fh)["invert_alpha_best"])
 
     # the SAME test points the run scored, and training-box points for the prox
-    x_te = uniform_inputs(args.dim, 4000, args.a, seed=3)[: args.n_eval]
-    y_tr = uniform_inputs(args.dim, 4000, train_a, seed=1)
+    x_te = uniform_inputs(dim, 4000, a, seed=3)[:n_eval]
+    y_tr = uniform_inputs(dim, 4000, train_a, seed=1)
 
     # ONE Route-1 inversion on the test set, shared by the scatter and profile.
-    from src.recovery import recover_prior_route1, evaluate_learned_prior_G
     r1 = recover_prior_route1(x_te, psi, "cvx_gd", alpha=alpha,
-                              max_iters=args.invert_iters)
+                              max_iters=invert_iters)
     r2 = evaluate_learned_prior_G(x_te, G)
 
+    # The axis cross-section (freeze all but one coordinate at 0) is removed: at
+    # dim > 2 that slice has volume fraction ~(eps/a)^(dim-1) ~ 0, so no training
+    # point is near it and the panel showed pure extrapolation, not accuracy. The
+    # conditional cross-section (backgrounds from the query distribution) is the
+    # valid high-dimensional view.
     out = []
-    out.append(plot_cross_sections(
-        problem, psi, args.a, 100, args.dim,
-        os.path.join(LOGS, f"{name}_cross_sections.png"), model_G=G, alpha=alpha,
-        title=f"{name} (axis cross-section: IN-DISTRIBUTION ONLY AT d=2)"))
     out.append(plot_conditional_cross_section(
-        problem, psi, G, args.a, train_a, args.dim,
+        problem, psi, G, a, train_a, dim,
         os.path.join(LOGS, f"{name}_conditional.png"), alpha=alpha,
-        invert_iters=args.invert_iters))
+        invert_iters=invert_iters))
     out.append(plot_typical_ray(
-        problem, psi, G, args.a, args.dim,
+        problem, psi, G, a, dim,
         os.path.join(LOGS, f"{name}_typical_ray.png"), alpha=alpha,
-        invert_iters=args.invert_iters))
+        invert_iters=invert_iters))
     out.append(plot_pred_vs_true(
         problem, x_te, r1, r2, os.path.join(LOGS, f"{name}_pred_vs_true.png"), alpha=alpha))
     out.append(plot_prox_scatter(
         problem, psi, y_tr, os.path.join(LOGS, f"{name}_prox_scatter.png")))
     out.append(plot_preimage_scatter(
         problem, G, x_te, os.path.join(LOGS, f"{name}_preimage_scatter.png")))
+    return out
 
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--family", required=True, choices=list(FAMILIES))
+    ap.add_argument("--dim", type=int, required=True)
+    ap.add_argument("--name", default=None,
+                    help="checkpoint/figure basename; defaults to <family>_<dim>D. "
+                         "Set it to plot a non-default run (e.g. a depth variant) "
+                         "without colliding with the sweep's figures.")
+    ap.add_argument("--a", type=float, default=4.0)
+    ap.add_argument("--n-eval", type=int, default=1000)
+    ap.add_argument("--invert-iters", type=int, default=20000,
+                    help="Route-1 inversion budget for the figures; lower is faster "
+                         "but changes Route 1's curve, so keep the run's value")
+    ap.add_argument("--open", action="store_true", help="open the figures (macOS)")
+    args = ap.parse_args()
+
+    out = render(args.family, args.dim, name=args.name, a=args.a,
+                 n_eval=args.n_eval, invert_iters=args.invert_iters)
     for p in out:
         print(p)
     if args.open:

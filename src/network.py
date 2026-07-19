@@ -24,7 +24,7 @@ def hidden_width(dim):
     the paper, never justified by an experiment.
 
     It is reverted because it confounds the dimension study: N now grows with d
-    (N = 10000*d) and |J| ~ 2d, so letting capacity jump at d=8 and d=32 as
+    (N = 15000*d) and |J| ~ 2d, so letting capacity jump at d=8 and d=32 as
     well would leave an error trend across dimensions attributable to nothing.
     With the width fixed, d is the only variable. Cost is modest: the CPU is
     overhead-bound, so width 256 is 14x the parameters of width 64 but only

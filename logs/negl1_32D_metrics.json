@@ -1,0 +1,56 @@
+{
+  "name": "negl1_32D",
+  "dim": 32,
+  "hidden": 256,
+  "query_halfwidth": 4.0,
+  "train_halfwidth": 4.0,
+  "preimage_bound": 4.0,
+  "n_train": 480000,
+  "steps": 250000,
+  "invert_alphas": [
+    0.0,
+    0.1
+  ],
+  "invert_alpha_best": 0.0,
+  "route1_rmse_per_alpha": {
+    "0.0": 2.4658093096783413,
+    "0.1": 2.8170769454989886
+  },
+  "route1_diverged_per_alpha": {
+    "0.0": false,
+    "0.1": false
+  },
+  "route1_all_alphas_diverged": false,
+  "psi_val_mse": 0.5351518392562866,
+  "G_val_mse": 2.5637645721435547,
+  "prior_rmse_route1": 2.4658093096783413,
+  "prior_rmse_route2": 2.1383781497026133,
+  "route1_preimage_excess": 0.920103132724762,
+  "route2_preimage_excess": 0.7531909942626953,
+  "route1_median_prox_residual": 0.003195270811200618,
+  "route2_median_prox_residual": 0.18204684664402615,
+  "route1_median_fy_gap": 2.878000036607304,
+  "route2_median_fy_gap": 5.192968624977539,
+  "route1_max_preimage_linf": 3.680412530899048,
+  "route2_max_preimage_linf": 3.0127639770507812,
+  "route2_yk_reach": 5.600941181182861,
+  "route2_frac_query_uncovered": 0.0,
+  "route1_diagnostic": {
+    "rmse": 2.4658093096783413,
+    "median_prox_residual": 0.003195270811200618,
+    "p90_prox_residual": 0.009300694440308243,
+    "median_fy_gap": 2.878000036607304,
+    "max_preimage_linf": 3.680412530899048,
+    "n_points": 1000
+  },
+  "route2_diagnostic": {
+    "rmse": 2.1383781497026133,
+    "median_prox_residual": 0.18204684664402615,
+    "p90_prox_residual": 0.22713110811695367,
+    "median_fy_gap": 5.192968624977539,
+    "max_preimage_linf": 3.0127639770507812,
+    "n_points": 1000
+  },
+  "min_inner_weight": 0.0,
+  "plot": "/Users/gabrielpl/Claude/research/work_papers/dl_hj_eq/numerics/logs/negl1_32D_cross_sections.png"
+}

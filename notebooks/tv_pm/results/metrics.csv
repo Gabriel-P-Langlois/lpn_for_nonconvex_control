@@ -1,0 +1,13 @@
+arch,beta,width,layers,channels,blocks,params,m,N,steps,val_loss,resid_eval_pct,resid_val_pct,corr_J_TV,delta_pct,note
+fc,5,256,2,,,181057,8000,20000,250000,0.0200,13.39,12.36,0.989,1.86,baseline (units+budget fixed; beta not yet tuned)
+fc,10,256,2,,,181057,8000,20000,250000,0.0082,11.08,,0.996,1.86,beta sweep
+fc,20,256,2,,,181057,8000,20000,250000,0.0073,10.69,,0.99,1.86,PRODUCTION (beta sweet spot)
+fc,40,256,2,,,181057,8000,20000,250000,0.0083,10.70,,0.99,1.86,beta sweep (no gain past 20)
+fc,20,256,3,,,263233,8000,20000,250000,0.0082,10.97,,0.99,1.86,depth: no help
+conv,20,,,32,2,19489,8000,20000,250000,0.0079,10.88,9.35,0.997,1.86,conv-ICNN: ties fc; highest corr; 9x fewer params but 6.8x more compute
+fc,5,256,2,,,181057,2000,5000,250000,0.0469,22.34,19.84,0.988,4.48,m-sweep at beta=5 (N=5000)
+fc,5,256,2,,,181057,8000,5000,250000,0.0304,13.62,12.86,0.983,1.86,m-sweep at beta=5 (N=5000; ~matches N=20000)
+fc,5,256,2,,,181057,32000,5000,250000,,10.14,,0.981,1.16,m-sweep at beta=5 (N=5000); fit floor~9.7% kappa~4.5
+fc,20,256,2,,,181057,2000,5000,250000,0.0297,20.55,16.86,0.988,4.48,m-sweep at beta=20 (N=5000)
+fc,20,256,2,,,181057,8000,5000,250000,0.0129,11.28,9.93,0.989,1.86,m-sweep at beta=20 (N=5000)
+fc,20,256,2,,,181057,32000,5000,250000,0.0093,7.02,6.82,0.991,1.16,m-sweep at beta=20 (N=5000); fit floor~6.4% kappa~4.4; NOT floored at m=8000

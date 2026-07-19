@@ -1,0 +1,36 @@
+{
+  "name": "SMOKE_FY",
+  "dim": 32,
+  "hidden": 256,
+  "layers": 2,
+  "lam_fy": 1.0,
+  "query_halfwidth": 4.0,
+  "train_halfwidth": 9.0,
+  "preimage_bound": 9.0,
+  "n_train": 6000,
+  "steps": 400,
+  "invert_alphas": [
+    0.0,
+    0.1
+  ],
+  "invert_alpha_best": 0.1,
+  "route1_all_alphas_diverged": true,
+  "route1_diverged_per_alpha": {
+    "0.0": true,
+    "0.1": true
+  },
+  "psi_val_mse": 19214.892578125,
+  "G_val_mse": 32984.8984375,
+  "prior_rmse_route1": null,
+  "prior_rmse_route2": 139.41035353671404,
+  "route1_median_prox_residual": 0.7983102575148668,
+  "route2_median_prox_residual": 0.89016735203383,
+  "route1_median_fy_gap": -779.677011979863,
+  "route2_median_fy_gap": 14.410516543003737,
+  "route1_max_preimage_linf": 19.381925582885742,
+  "route2_max_preimage_linf": 1.5836243629455566,
+  "route1_preimage_excess": 2.1535472869873047,
+  "route2_preimage_excess": 0.1759582625495063,
+  "route2_frac_query_uncovered": 0.0,
+  "min_inner_weight": 0.0
+}

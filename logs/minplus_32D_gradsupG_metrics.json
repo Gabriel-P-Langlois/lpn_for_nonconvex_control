@@ -1,0 +1,36 @@
+{
+  "name": "minplus_32D_gradsupG",
+  "dim": 32,
+  "hidden": 256,
+  "layers": 2,
+  "lam": 1.0,
+  "query_halfwidth": 4.0,
+  "train_halfwidth": 9.0,
+  "preimage_bound": 9.0,
+  "n_train": 480000,
+  "steps": 250000,
+  "invert_alphas": [
+    0.0,
+    0.1
+  ],
+  "invert_alpha_best": 0.0,
+  "route1_all_alphas_diverged": false,
+  "route1_diverged_per_alpha": {
+    "0.0": false,
+    "0.1": false
+  },
+  "psi_val_mse": 0.03279257193207741,
+  "G_val_mse": 0.2299215942621231,
+  "prior_rmse_route1": 0.2368811285298017,
+  "prior_rmse_route2": 0.5004474172433927,
+  "route1_median_prox_residual": 0.010594804082329615,
+  "route2_median_prox_residual": 0.02681244298844034,
+  "route1_median_fy_gap": 0.21251242199596732,
+  "route2_median_fy_gap": 0.322916448086346,
+  "route1_max_preimage_linf": 8.331779479980469,
+  "route2_max_preimage_linf": 8.815996170043945,
+  "route1_preimage_excess": 0.9257532755533854,
+  "route2_preimage_excess": 0.9795551300048828,
+  "route2_frac_query_uncovered": 0.0,
+  "min_inner_weight": 0.0
+}

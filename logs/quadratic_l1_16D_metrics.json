@@ -4,6 +4,7 @@
   "hidden": 256,
   "query_halfwidth": 4.0,
   "train_halfwidth": 5.0,
+  "preimage_bound": 5.0,
   "n_train": 240000,
   "steps": 250000,
   "invert_alphas": [
@@ -24,6 +25,8 @@
   "G_val_mse": 0.027081431820988655,
   "prior_rmse_route1": 0.19584353903170934,
   "prior_rmse_route2": 0.2843534315290625,
+  "route1_preimage_excess": 1.3189352989196776,
+  "route2_preimage_excess": 1.0217665672302245,
   "route1_median_prox_residual": 0.0012965303553556032,
   "route2_median_prox_residual": 0.057381340379235216,
   "route1_median_fy_gap": -0.22778551760760735,

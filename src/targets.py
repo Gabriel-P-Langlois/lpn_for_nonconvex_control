@@ -14,6 +14,7 @@ Phase 1 (exp_4_2_1_1D, the minplus and concave-quadratic families) are carried
 over unchanged.
 """
 import numpy as np
+from scipy.special import erfc, erfcx
 
 
 def euclid_norm(x):
@@ -62,9 +63,23 @@ class Problem:
         """max ||preimage(x)||_inf over the query box [-a,a]^d."""
         raise NotImplementedError
 
+    def preimage_bound(self, a):
+        """Exact max ||preimage(x)||_inf over [-a,a]^d, for the TRUE psi.
+
+        The divergence tripwire compares against this, not against the training
+        half-width. The two coincide for the expanding families (QuadraticL1,
+        Minplus) but not for the contracting ones: ConcaveQuad's preimage is
+        x/2, bounded by a/2 = 2, while its training box is a = 4. Testing
+        against the box would leave the tripwire 3x too loose.
+
+        The bound holds for the exact psi. A learned psi_theta may overshoot it
+        slightly without diverging, so callers allow a margin.
+        """
+        return float(self._preimage_bound(a))
+
     def train_halfwidth(self, a):
         # Never shrink below the query box: psi's own fit is reported there.
-        return max(float(a), float(self._preimage_bound(a)))
+        return max(float(a), self.preimage_bound(a))
 
 
 class QuadraticL1(Problem):
@@ -156,6 +171,163 @@ class ConcaveQuad(Problem):
 
     def _preimage_bound(self, a):
         return a * (2.0 - self.t) / (3.0 - self.t)
+
+
+def _log_L(z):
+    """log L(z) for L(z) = 0.5 * exp(z^2) * erfc(z), computed without overflow.
+
+    L is the profile function of the Cole-Hopf solution for an L1 prior. It is
+    never formed directly: exp(z^2) overflows past z ~ 27 in float64 exactly
+    where erfc(z) underflows, so the product is a 0*inf in disguise even though
+    L itself is O(1/z) there. Two stable branches:
+
+        z >= 0:  L(z) = 0.5 * erfcx(z),  erfcx the SCALED complementary error
+                 function, which absorbs the exp(z^2) analytically.
+        z <  0:  erfc(z) = 2 - erfc(-z) gives L(z) = exp(z^2) * (1 - 0.5*erfc(-z)),
+                 hence log L(z) = z^2 + log1p(-0.5*erfc(-z)). The log1p argument
+                 lies in (-0.5, 0], so no cancellation.
+
+    L(z) > 0 for every real z, so the log is always defined.
+    """
+    z = np.asarray(z, dtype=float)
+    out = np.empty(z.shape, dtype=float)
+    pos = z >= 0.0
+    out[pos] = np.log(0.5 * erfcx(z[pos]))
+    zneg = z[~pos]
+    out[~pos] = zneg * zneg + np.log1p(-0.5 * erfc(-zneg))
+    return out
+
+
+class PosteriorMeanL1(Problem):
+    """Posterior-mean (Cole-Hopf) smoothing of J(x) = lam * ||x||_1, H(p) = 0.5||p||^2.
+
+    The imaging example of work2.tex Instantiation A: the given object is the
+    Gaussian posterior-mean DENOISER u_PM, and the prior we recover is its
+    implicit smooth regularizer f_reg = K_eps^* - 0.5||.||^2, which is the prox
+    map's regularizer by Darbon-Langlois (JMIV) Prop. 3.2. Unlike the four
+    families above, f_reg has no elementary closed form in its own argument --
+    it is defined through a conjugate -- but it is computable to machine
+    precision via the tangency point, which is what `prior_true` does.
+
+    ARGUMENT CONVENTION (this class follows the module's, which is the OPPOSITE
+    of work2.tex's). Here `y` is the denoiser INPUT = psi's argument, and `x` is
+    the denoised point = the conjugate variable at which the prior is reported.
+    work2.tex swaps the two letters.
+
+    The closed forms, with a_i = (y_i + t*lam)/sqrt(2*t*eps) and
+    b_i = (-y_i + t*lam)/sqrt(2*t*eps):
+
+        S_eps(y,t) = ||y||^2/(2t) - eps * sum_i log(L(a_i) + L(b_i)),
+        psi(y) = K_eps(y,t) = 0.5||y||^2 - t*S_eps(y,t)
+                            = t*eps * sum_i log(L(a_i) + L(b_i)),
+        u_PM(y) = grad psi(y),  (u_PM)_i = y_i + t*lam*tanh((log L(a_i) - log L(b_i))/2).
+
+    The quadratic in S cancels against the one in psi EXACTLY, which is why
+    `cvx_true` is overridden rather than inherited: the base class would form
+    0.5||y||^2 - S and lose precision subtracting two large near-equal numbers.
+    The override is also the only form correct at t != 1 -- the base class's
+    identity assumes psi = 0.5||y||^2 - S, i.e. it silently drops the factor t.
+
+    The shrinkage formula corrects work2.tex eq:upm_l1, which prints the ratio
+    (L(a)+L(b))/(L(a)-L(b)). That is singular at y_i = 0, where a = b. The ratio
+    is the RECIPROCAL of the printed one: differentiating log(L(a)+L(b)) and
+    using L'(z) = 2z*L(z) - 1/sqrt(pi) (the -1/sqrt(pi) cancels in the
+    difference) gives (L(a)-L(b))/(L(a)+L(b)), written above as a tanh of the
+    log-difference -- the algebraically identical form, and the only one that is
+    stable when one of L(a), L(b) overflows. Then u_PM(0) = 0 by symmetry and
+    |u_PM(y) - y| < t*lam strictly, so u_PM is a smooth shrinkage that recovers
+    soft-thresholding as eps -> 0. At lam = t = 1 the eps -> 0 limit is EXACTLY
+    the QuadraticL1 family above; `tests/test_posterior_mean_l1.py` pins that.
+    """
+
+    def __init__(self, eps=0.1, lam=1.0, t=1.0):
+        self.eps = float(eps)
+        self.lam = float(lam)
+        self.t = float(t)
+
+    def _log_pair(self, y):
+        """(log L(a_i), log L(b_i)), elementwise, same shape as y."""
+        scale = np.sqrt(2.0 * self.t * self.eps)
+        tl = self.t * self.lam
+        y = np.asarray(y, dtype=float)
+        return _log_L((y + tl) / scale), _log_L((tl - y) / scale)
+
+    def _log_sum(self, y):
+        """log(L(a_i) + L(b_i)), elementwise. logaddexp never forms either L."""
+        la, lb = self._log_pair(y)
+        return np.logaddexp(la, lb)
+
+    def hjsol_true(self, y):
+        y = np.asarray(y, dtype=float)
+        return euclid_norm_sq(y) / (2.0 * self.t) - self.eps * np.sum(
+            self._log_sum(y), axis=1
+        )
+
+    def cvx_true(self, y):
+        """psi(y) = t*eps*sum_i log(L(a_i)+L(b_i)); see the class docstring for
+        why this is not left to the base class."""
+        return self.t * self.eps * np.sum(self._log_sum(y), axis=1)
+
+    def denoiser(self, y):
+        """u_PM(y) = grad psi(y): the smooth shrinkage. Elementwise in y."""
+        la, lb = self._log_pair(y)
+        return np.asarray(y, dtype=float) + self.t * self.lam * np.tanh(
+            0.5 * (la - lb)
+        )
+
+    def preimage(self, x, iters=100):
+        """The y solving grad psi(y) = u_PM(y) = x. EXPANDS by less than t*lam.
+
+        u_PM has no closed-form inverse, but it is separable and each coordinate
+        map is a strictly increasing bijection of R with |u_PM(y) - y| < t*lam
+        (the tanh factor is bounded by 1 in modulus). So the root is bracketed by
+        (x - t*lam, x + t*lam) with no search, and 100 halvings of that width-2*t*lam
+        bracket land far below float64 resolution. Bisection rather than Newton:
+        it cannot leave the bracket, and the cost is irrelevant next to training.
+
+        The sign test is written without a bracket precondition on purpose. For
+        |x| >> t*lam the root sits within an ulp of an endpoint (u_PM(x + t*lam)
+        rounds to x), so requiring a strict sign change at the endpoints would
+        fail on exactly the points where the answer is the endpoint.
+
+        NOTE the eps -> 0 limit is NOT uniform here, unlike for S and f_reg. The
+        limit x + t*lam*sign(x) jumps by 2*t*lam across the kink, while every
+        eps > 0 preimage is continuous (u_PM(0) = 0 forces preimage(0) = 0), so
+        no continuous family can converge to it uniformly. Convergence is
+        pointwise off the kink -- measured at 1 ulp for |x| > 0.05 at eps = 1e-6
+        -- with a boundary layer of width ~sqrt(2*t*eps) around it. This does not
+        affect prior_true, whose limit ||.||_1 is continuous.
+        """
+        x = np.asarray(x, dtype=float)
+        tl = self.t * self.lam
+        lo, hi = x - tl, x + tl
+        for _ in range(iters):
+            mid = 0.5 * (lo + hi)
+            below = self.denoiser(mid) < x
+            lo = np.where(below, mid, lo)
+            hi = np.where(below, hi, mid)
+        return 0.5 * (lo + hi)
+
+    def prior_true(self, x):
+        """f_reg(x) = psi^*(x) - 0.5||x||^2, the denoiser's implicit regularizer.
+
+        psi^*(x) = <y, x> - psi(y) at y = preimage(x), exact because
+        grad psi(y) = x attains the sup defining the conjugate. This is the same
+        identity `src.recovery.conjugate_samples` uses to build the Route-2
+        targets, evaluated here on the TRUE psi instead of a learned one.
+        """
+        x = np.asarray(x, dtype=float)
+        y = self.preimage(x)
+        return (
+            np.sum(y * x, axis=1) - self.cvx_true(y) - 0.5 * euclid_norm_sq(x)
+        )
+
+    def _preimage_bound(self, a):
+        """In exact arithmetic |u_PM(y) - y| < t*lam is strict, so this is a
+        supremum no query attains. In float64 it IS attained: the tanh saturates
+        to +-1.0 once |log L(a) - log L(b)| > ~38, which happens inside the query
+        box for small eps. Callers must not test the bound strictly."""
+        return a + self.t * self.lam
 
 
 def _project_simplex(V):

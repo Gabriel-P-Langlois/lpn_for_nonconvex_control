@@ -10,9 +10,8 @@ BUDGET IS IN OPTIMIZER STEPS, NOT EPOCHS (D2 amendment, 2026-07-09). The old
 300-epoch budget left every network under-trained: 4x the steps on the SAME
 data cuts psi's validation MSE by 4x at d=2 and 9x at d=4, while 4x the data at
 a fixed step budget buys under 10%. Since N now grows with the dimension
-(N = 10000*d), an epoch means something different at every d -- epochs would run
-from ~290 at d=2 to ~14 at d=64 -- so the learning-rate decay and the
-early-stopping patience are counted in STEPS. Epochs are not a control here and
+(N = 15000*d), an epoch means something different at every d, so the
+learning-rate decay is counted in STEPS. Epochs are not a control here and
 are not reported.
 """
 import numpy as np

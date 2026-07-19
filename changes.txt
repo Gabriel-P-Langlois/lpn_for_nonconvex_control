@@ -49,6 +49,34 @@ B9  [07-09] Reported validation MSE described a DISCARDED model: training
 B10 [07-09] The 300-epoch budget left every network under-trained. See P4.
 B11 [07-09] The width tiering 64/128/256 was OUR deviation from the paper.
     See P5.
+B12 [07-10] bin/_run.py silently reinstated the rule its own comment forbids:
+    when EVERY alpha diverged, `min(ok or per_alpha, ...)` fell back to a plain
+    min over the DIVERGED runs and wrote that number to prior_rmse_route1. The
+    all_diverged flag was set but nothing consumed it. Now prior_rmse_route1 is
+    None when every alpha diverges. Exercised by a regression probe that shrinks
+    preimage_bound to 1e-3 so all solves trip the wire.
+B13 [07-10] bin/run_all.py's FIELDS omitted route1_all_alphas_diverged and
+    route1_diverged_per_alpha, so a diverged Route-1 RMSE entered summary.csv
+    UNMARKED and the table could not be audited from itself -- the exact failure
+    recorded in R3 below. Both columns added, plus preimage_bound and
+    route{1,2}_preimage_excess, and the console table marks ALL-DIVERGED.
+B14 [07-10] The divergence tripwire tested max|y|_inf > 1.5*train_a, but every
+    family already implements the analytic bound _preimage_bound(a). For
+    ConcaveQuad the bound is a/2 = 2 while train_a = 4, leaving the tripwire 3x
+    too loose. Now tests against problem.preimage_bound(a), exposed as public
+    API. Consequence, visible in the kept d=16 run: route1_max_preimage_linf =
+    6.59 against an exact bound of 5, i.e. psi_theta was EXTRAPOLATED at some
+    query (1.32x) without tripping the old wire. Not divergence -- the median
+    prox residual is 1.3e-3 -- but it is now reported as route1_preimage_excess
+    and printed as a NOTE.
+B15 [07-10] src/recovery.py:conjugate_samples built ONE autograd graph over all
+    N training points. At d=64, N = 15000*64 = 960000, that is several GB of
+    retained activations and the sweep would have died late. Chunked at 50000
+    (gradient at x_k depends only on x_k, so chunking is exact -- verified
+    bit-identical on a ragged split). NOT a numbers-changing bug; a blocker.
+B16 [07-10] Stale docstrings: src/train.py and src/network.py both stated
+    N = 10000*d; the code uses 15000*d. bin/_run.py hardcoded "(=15000*d)" into
+    its log line, so a custom n_train printed a false label.
 
 ################################################################
 # 3. PROTOCOL  (these change what the numbers MEAN)
@@ -113,6 +141,152 @@ C8  [07-09] Checkpoints + metrics JSON on every run; bin/plot.py regenerates all
 C9  [07-09] src/diagnostics.py: four in-distribution figures replacing the
     origin cross-section at high d (entry 19). src/plotting.py now draws BOTH
     routes in the prior panel; it drew Route 2 only.
+C10 [07-15] notebooks/: the paper's experiments rebuilt as four per-family
+    notebooks (quadratic_l1, minplus, concave_quad, negl1), replacing the 30+
+    per-(family,dim) notebooks in (obsolete)_old_exps/. Thin wrappers over
+    bin/_run.py; each shows the sweep table from logs/*_metrics.json and the
+    diagnostic figures regenerated from logs/ckpt/ at every d in {2..64},
+    committed executed; RETRAIN=True reruns the full pipeline under a
+    "_retrain" name so production checkpoints cannot be clobbered. bin/plot.py
+    figure loop extracted into an importable render() (CLI unchanged) so the
+    notebooks reuse it. Mapping and exclusions: notebooks/README.md.
+
+C11 [07-16] NEW FAMILY + NEW EXPERIMENT: PosteriorMeanL1 (work2.tex
+    Instantiation A), and a ONE-network design for it.
+
+    src/targets.py    PosteriorMeanL1: the Cole-Hopf/posterior-mean smoothing of
+                      J = lam*||x||_1. The given object is the PM DENOISER; the
+                      prior recovered is its implicit regularizer
+                      f_reg = K_eps^* - 0.5||.||^2, which has NO closed form in
+                      its own argument (Louchet/Gribonval give existence only).
+                      Computed to machine precision via the tangency point.
+    tests/            test_posterior_mean_l1.py, 10 checks. MUST pass before any
+                      number here is believed: this is a one-network experiment,
+                      so a target bug would corrupt the training targets AND the
+                      score they are judged against at once, with nothing
+                      downstream able to catch it (cf. B1, B2, B7).
+    notebooks/        posterior_mean_l1.ipynb, standalone, pre-executed.
+
+    WHY ONE NETWORK. sections/3_main-results.tex:119 states the paper's own
+    sampling model: {x_k, S(x_k,t), grad_x S(x_k,t)} -- the GRADIENT IS
+    OBSERVED. In the PM regime that is not an assumption but a fact about the
+    given object: the denoiser IS grad psi (one forward pass), so
+    grad_x S = (x - u_PM(x))/t exactly. Lemma A.1 then makes the prior samples
+    EXACT functions of the data, with no network in between:
+        y_k = u_PM(x_k) = grad psi(x_k)
+        f_reg(y_k)      = <x_k,y_k> - psi(x_k) - 0.5||y_k||^2   [needs S_eps]
+        grad f_reg(y_k) = x_k - y_k                             [DENOISER ONLY]
+    So the first network is needed ONLY when the data lacks grad S. The current
+    pipeline fits psi_theta and then builds G's targets FROM psi_theta, at the
+    very x_k where the exact psi(x_k) was given -- a cascade that injects
+    psi_theta's error into G's targets. This experiment measures what it costs.
+    Second consequence: the gradient identity needs no S_eps at all (it is prox
+    optimality), and S_eps is the EXPENSIVE object in practice (a log-partition
+    function; thermodynamic integration for a sampler) while the denoiser is one
+    call. A gradient-only variant is therefore what transfers to a black-box
+    denoiser (Instantiation B).
+
+    ASSUMPTION IS SELF-CONSISTENT HERE, AND ONLY HERE. The theory needs
+    u_PM = grad K_eps with K_eps convex. A generic trained denoiser (DnCNN,
+    BM3D) is not a conservative field at all, so it is the gradient of nothing;
+    that is why Fang et al. parameterize the prox as grad of an ICNN. The PM
+    denoiser is exactly the class where the hypothesis is a THEOREM
+    (Darbon-Langlois JMIV Prop. 3.2; Gribonval). State it that way in the paper:
+    the PM denoiser is chosen BECAUSE "the prox is known" is literally true.
+
+    CORRECTION TO work2.tex eq:upm_l1 (the .tex is NOT edited; user's call).
+    It prints  u_i = x_i + t*lam*(L(a)+L(b))/(L(a)-L(b)),  which is SINGULAR at
+    x_i = 0 where a = b. Differentiating eq:S_eps_l1 with L'(z) = 2z*L(z) -
+    1/sqrt(pi) (the -1/sqrt(pi) cancels in the difference) gives the RECIPROCAL
+    ratio, (L(a)-L(b))/(L(a)+L(b)). Then u_PM(0) = 0 by symmetry and
+    u_i -> x_i -+ t*lam as x_i -> +-inf, i.e. soft thresholding as eps -> 0.
+    Verified against QuadraticL1 to 1 ulp; the printed version is wrong.
+
+    NUMERICS OF THE CLOSED FORM (all in the class docstring):
+      * L(z) = 0.5*exp(z^2)*erfc(z) is NEVER formed: exp(z^2) overflows past
+        z ~ 27 exactly where erfc underflows. Use log L via erfcx (z >= 0) and
+        z^2 + log1p(-0.5*erfc(-z)) (z < 0).
+      * psi COLLAPSES to t*eps*sum_i logaddexp(log L(a_i), log L(b_i)) -- the
+        quadratic in S cancels exactly. cvx_true is OVERRIDDEN with this: the
+        base class's 0.5||y||^2 - S subtracts two large near-equal numbers, and
+        it is also the only form correct at t != 1 (the base identity silently
+        drops the factor t).
+      * The shrinkage ratio is tanh((log L(a) - log L(b))/2): algebraically
+        identical, and the only stable form when one of L(a), L(b) overflows.
+      * preimage: no closed-form inverse, but u_PM is separable, strictly
+        increasing, and |u_PM(y)-y| < t*lam, so (x-t*lam, x+t*lam) brackets the
+        root with no search. 100 bisections; inverts to 8.9e-16.
+
+    TWO FINDINGS FROM THE TEST, both structural, neither a bug:
+      * The eps -> 0 limit of the PREIMAGE is NOT uniform. Its limit
+        x + t*lam*sign(x) JUMPS by 2*t*lam across the kink while every eps > 0
+        preimage is continuous (u_PM(0)=0 forces preimage(0)=0), so no
+        continuous family can converge to it uniformly. Off the kink the
+        agreement with QuadraticL1 is 8.9e-16 (1 ulp); the error is confined to
+        a layer of width ~sqrt(2*t*eps). S and f_reg DO converge uniformly --
+        their limits are continuous -- so nothing we train on is affected.
+      * |u_PM(y) - y| < t*lam is strict in R but ATTAINED in float64: tanh
+        saturates to exactly 1.0 past |z| ~ 19. So preimage_bound is attained,
+        and u_PM(A) = a exactly at A = a + t*lam. Callers must not test the
+        bound strictly. This is not new: QuadraticL1 has soft(5,1) = 4 exactly.
+        Coverage of the query box is ONTO WITH ZERO MARGIN by construction --
+        that is what "smallest A" means -- and in exact arithmetic the excess at
+        A = 5, eps = 0.1 is ~4e-37, 21 orders below the ulp at 4.
+
+    train_gradsup HAD TO BE REWRITTEN. The scratch/gradsup*.py scripts behind the
+    07-11 result (psi 233x) are GONE: no scratch/, no *gradsup*.py anywhere under
+    ~/gabrielpl, numerics/ is not a git repo, no changelog entry. Only
+    logs/minplus_32D_gradsup*_metrics.json + checkpoints survived, so the headline
+    result of report 4.9 has no reproducible source. The rewrite lives IN the
+    notebook, which is committed executed, so it cannot vanish the same way.
+
+    GOTCHA (cost 2 debug cycles): src/__init__.py imports src.plotting, which
+    calls matplotlib.use("Agg") at import time for headless bin/ runs. A notebook
+    doing `%matplotlib inline` BEFORE importing from src gets Agg anyway and every
+    figure comes out empty, with only a UserWarning. Select the backend AFTER the
+    src imports.
+
+    NOT PRODUCTION NUMBERS. Scoping budget: d=8, eps=0.1, N=20000, width 128,
+    S=50000 (D2: N=15000*d=120000, width 256, S=250000). Not comparable to
+    logs/summary_d2_full.csv; nothing here belongs in a paper table.
+
+    REGIME FIXED (user, 07-16): eps=0.1, t=1, lam=1, and S_eps(x_k,t) is NEVER
+    OBSERVED. The denoiser is the only data. This is the realistic regime --
+    S_eps is a log-partition function (thermodynamic integration for a sampler),
+    the denoiser is one forward pass -- and it leaves GRADIENT-ONLY SUPERVISION
+    as the only viable method: every alternative (fitting f_reg or psi* to
+    values, Sobolev, or the two-network pipeline) needs psi(x_k), hence S_eps.
+    S_eps appears in the notebook exactly once, to compute the ground truth that
+    scoring compares against; it never touches training, and the code marks the
+    boundary.
+    Two consequences, both stated in the notebook:
+      * The constant is UNIDENTIFIABLE, not merely unreported -- nothing in the
+        data fixes the level of f_reg. So the error is reported with the best
+        constant removed, and the unconditional RMSE is DROPPED: it measures
+        where the net's level happened to land. Nothing is lost, since
+        prox_{f+c} = prox_f.
+      * NO BASELINE SURVIVES: the two-network pipeline needs S_eps to train
+        psi_theta at all. A denoiser-only baseline does exist and was NOT run:
+        train psi_theta by gradient supervision grad psi_theta(x_k) = y_k --
+        essentially what Fang et al. do -- then conjugate to G. Offered to the
+        user; declined for now. Until it is run, the result below has nothing to
+        compare against.
+
+    RESULT (one network, 36233 params, 345 s):
+      relative error, constant removed : 0.0076 %
+      prox residual (NO ground truth)  : 5.4e-4
+      unidentified constant            : +2.165
+
+    READING. The prior is recovered to 0.0076% relative from denoiser
+    evaluations alone -- no value function, one network, no inversion, no
+    conjugation. The certificate agrees without ground truth (5.4e-4). Caveats:
+    one dimension, one eps, one seed, a scoping budget, an exactly-solvable
+    family, and NO BASELINE. This is a scoping result, not a claim.
+
+    A five-variant comparison was run earlier on 07-16, before the regime was
+    fixed. Its numbers are DELETED, not archived: four of the five require
+    S_eps, so they measure a data model now excluded, and they were never quoted
+    anywhere. Nothing in the audit or the paper depends on them.
 
 ################################################################
 # 5. SUPERSEDED NUMBERS -- DO NOT CITE
@@ -161,23 +335,116 @@ before re-auditing.
 ################################################################
 # 7. OPEN
 ################################################################
-O1  Phase 5: the error-vs-K decay study for Gamma_K -- what referee R2.3 asked
-    for. Unbuilt. MaxPlus.maxplus_approx() now supplies Gamma_K against an exact
-    reference, so the ground truth is in hand.
+O1  [DONE 07-10] Phase 5 / referee R2.3 / avenue E.2: the error-vs-K decay study
+    for Gamma_K. Built in src/maxplus_bounds.py + bin/gamma_decay.py. See
+    section 8. NOTE: it does NOT use MaxPlus.maxplus_approx(), for the reason in
+    section 8 -- there Gamma_K and J are built from the SAME P, so growing K
+    moves the target and no decay statement is possible.
 O2  Is width 256 right? UNTESTED, and only now testable: every prior measurement
     was taken at a budget too short to converge, so a width ablation would have
     measured which width trains fastest, not which fits best. The revert is
     justified by consistency with the manuscript, not by evidence.
-O3  d >= 16 has not been run under the current protocol.
+O3  [IN PROGRESS 07-10] d >= 16 under the current protocol. Full 24-config sweep
+    (4 families x d in {2,4,8,16,32,64}) launched 07-10 with --allow-high-dim,
+    user-approved. ~45 min/config, ~18 h. -> logs/summary_d2_full.csv.
+    Per-step cost is FLAT in d (width 256 dominates; the d x 256 input layer is
+    negligible against 256 x 256), measured 5.9/4.3/4.8 ms/step at d=2/16/64.
 O4  The max-plus ports use D2's MSE pipeline; the notebooks trained with LPN's
     proximal-matching loss on a gamma ramp. They measure something different.
     Deliberate; see bin/not_in_paper/README.md.
 O5  N = 10P (constant, ~1.4M) instead of N = 10000*d would make width, depth, N
     and S all constant, leaving d as the sole variable. Nearly free under a step
     budget. Not adopted: one change, not two.
+O6  The E.2 certificate U_M - Gamma_K is CONSERVATIVE: median slack 15.8x over
+    the true error at d=2, M=80, and it is nonzero on a region where the true
+    error is exactly zero. The slack is the UPPER bound's, not Gamma_K's. Whether
+    a sharper computable upper bound exists is open.
+O7  The tangent slope set obeys NO single power law at any d (see section 8,
+    RETRACTED). Do not quote a rate for it. src/maxplus_bounds.py and
+    bin/gamma_decay.py still carry the old "3^d faces" wording and the tangent
+    panel; both need the correction applied.
+O8  E.2's sandwich has NOT been evaluated on the paper's object g_t = t*JBVS + q,
+    only on S. The inputs are already emitted by conjugate_samples(); the decay
+    of the certificate in the SAMPLE COUNT N (also requested by R2.3) has not
+    been measured at all.
 
 ################################################################
-# 8. CHRONOLOGY  (detail lives in git history and the audit)
+# 8. E.2 -- THE DUALITY SANDWICH AND THE K-DECAY  [07-10]
+################################################################
+Code: src/maxplus_bounds.py (math + tests), bin/gamma_decay.py (study).
+Outputs: logs/gamma_decay.{csv,png}, gamma_sandwich_1d.png, gamma_certificate.png
+No network, no training: J = ||x||_1, t = 1, everything closed-form.
+
+WHY NOT MaxPlus.maxplus_approx(). It builds Gamma_K and J from the SAME slope
+matrix P, so growing K moves the TARGET as well as the approximant. That is a
+legitimate quantity but it is not an error-decay curve. E.2 needs a fixed target
+and a growing approximant. J = ||x||_1 supplies both: J* = iota_{||p||_inf<=1}
+(so J*(p_k) = 0 and sampling is trivial), and S(y,1) is the separable Huber,
+verified against src.targets.QuadraticL1.hjsol_true to 4e-15.
+
+THE SANDWICH.  Gamma_K(y) = max_k {<p_k,y> - J*(p_k) - (t/2)||p_k||^2} <= S(y,t)
+for EVERY K and every slope set, because each term is one competitor in the Hopf
+sup. And S(.,t) is convex, so its values at samples y_m give, on conv{y_m},
+S(y) <= U_M(y) := min{sum lam_m S(y_m) : lam in simplex, sum lam_m y_m = y},
+one small LP per query. Neither bound touches the ground truth. Both are tight at
+the samples when p_k = grad S(y_k) (the exact supporting hyperplane, E.2's
+"grad g(y_k) = x_k").
+
+THE FINDING (this is the paper-worthy part). The exponent is NOT a function of K
+and d alone -- it depends on WHERE the Hopf maximizer sits, because the error
+    S(y) - Gamma_K(y) = 0.5 min_k ||p_k - y||^2 - 0.5||p*(y) - y||^2
+is a difference of squared distances:
+  * p*(y) INTERIOR to dom J*  (||y||_inf <= 1): grad of the integrand vanishes,
+    error is QUADRATIC in the fill distance -> K^{-2/d}.
+  * p*(y) on the BOUNDARY (some |y_i| > 1): the constraint is active, the
+    gradient does not vanish, error is FIRST ORDER -> K^{-1/d}.
+On the query box [-4,4]^d the maximizer is interior on a fraction 4^{-d} of the
+box, so the BOUNDARY regime governs the RMS error and a slope set that fails to
+resolve d(dom J*) loses HALF the exponent. Measured (tail fit, K <= 4096):
+
+    sampler                  d=2     d=3     d=4    predicted
+    grid  (has the faces)  -1.09   -0.77   -0.63    -2/d
+    uniform p in dom J*    -0.45     --    -0.32    -1/d
+    uniform p, interior q  -1.01   -0.69   -0.55    -2/d   (control)
+
+Adding only the 2^d corners does NOT repair the uniform sampler; faces of
+intermediate codimension stay unresolved. Only the grid resolves every face.
+
+SCOPE (checked against the manuscript 07-10, see CLAUDE/claude_report.tex sec 4).
+This applies to the HOPF-side scheme, which approximates S by restricting
+sup_p{<p,y> - J*(p) - (t/2)|p|^2}. It is VACUOUS for the paper's own PAM, which
+approximates g_t = t*JBVS + q, whose conjugate psi_t is finite on ALL of R^n, so
+the maximizer is never on a boundary. Relevance is prospective (E.7, general H),
+plus: the paper's Thm (Gaubert) assumes Psi in C^2, which FAILS for J=||.||_1,
+so this is evidence in that gap (report item L378).
+
+RETRACTED 07-10 (was asserted here earlier the same day):
+  * "tangent p = clip(y_k) attains -2/d." FALSE. Those slopes lie on the
+    (d-1)-dimensional set dom(J*)'s boundary and split into ~a^-d * K interior
+    points and the rest on the boundary. The two populations serve DISJOINT
+    query regions and decay at different rates, so the aggregate is a MIXTURE,
+    not a power law. Splitting the RMS by query location, K<=4096:
+        d=2: queries in C -0.674   queries outside C -1.766
+        d=4: queries in C -0.444   queries outside C -0.695
+    The aggregate is dominated by the INTERIOR queries even though they are 5%
+    (d=2) and 0.4% (d=4) of the box, because the boundary term collapses. The
+    aggregate fit moves between -0.68 and -0.90 at d=2 across query draws.
+  * "the d>=8 tangent anomaly is because dom J* has 3^d faces and K<=4096 cannot
+    cover them." FALSE, or at best incidental: the mixture above holds at EVERY
+    d, not only d>=8. Quote no rate for the tangent sampler.
+
+PREASYMPTOTIC TRAPS, both live at affordable K:
+  * Tensor grid: delta = 2/(m-1) but K = m^d, so small m reads too STEEP. The
+    first fit gave -2.57 at d=1 (pred -2.00) purely from this. Fit the largest-K
+    tail (fit_loglog_slope(..., tail=4)) -> -2.07.
+  * The grid's fitted/predicted ratio drifts UP with d (1.09, 1.16, 1.26 at
+    d=2,3,4) because the largest affordable m falls with d. Consistent, not
+    converged.
+  * Random slope sets: the fill distance of K i.i.d. points carries (log K)^{1/d},
+    so a fit against log K alone understates the exponent. Entries uncorrected.
+
+################################################################
+# 9. CHRONOLOGY  (detail lives in git history and the audit)
 ################################################################
 2026-07-09 (19)  DIAGNOSTIC SUITE + CHECKPOINTS.
                  _run.py now saves logs/ckpt/<run>_{psi,G}.pth and
@@ -218,6 +485,383 @@ O5  N = 10P (constant, ~1.4M) instead of N = 10000*d would make width, depth, N
                  we sample the hypercube"). The guess was right; now it has a
                  formula. Same remark disposes of the d=64 "MSE reduced
                  significantly" puzzle.
+
+2026-07-17 (2)   tv_pm STEPS 1-2. Data built and cached. FIRST TRAINING RUN FAILED
+                 AND THE CAUSE IS A UNITS MISMATCH, not the method. Open: the
+                 width sweep. NOTHING HERE IS A RESULT YET.
+
+                 DATA (dataset.py, ~17 min, notebooks/tv_pm/data/*.npz, gitignored
+                 already): 20000 train + 4000 val (Barbara 8x8 patches) + 4000 eval
+                 (cameraman), x = clip(patch + N(0,sigma^2)), m=8000, one chain per
+                 x_k. All splits healthy: u_PM strictly inside the open box,
+                 |x-y| ~ 0.035 ~ sigma, accept 0.30-0.32.
+                 8x8 and CLIPPING decided by the user 2026-07-17 (DESIGN.md).
+                 CAVEAT to state in any writeup: train and val patches SHARE PIXELS.
+                 256x256 holds only 1024 non-overlapping 8x8 patches and we need
+                 24000, so "disjoint" can only mean distinct POSITIONS. Each x_k
+                 still gets a fresh noise draw and an independent chain, so val
+                 measures generalization over the noise and the sampler -- but not
+                 off Barbara's content. That is what the cameraman split is for, and
+                 why the headline number is read there.
+
+                 THE BARRIER (DESIGN.md open item) IS SETTLED, empirically: no y_k
+                 pixel lands within 0.02 of a [0,1] face (closest 0.064 train,
+                 0.026 eval). The ICNN's inability to represent a barrier never
+                 bites. Cameraman probes nearer, so it would show there first.
+
+                 B14 [07-17] UNITS. The net saw y in (0,1)^64 -- 8x8 natural-image
+                 patches, which vary by std 0.039 WITHIN a patch while the patch
+                 mean ranges over 0.064..0.921. Softplus(beta=5) bends over ~1/beta
+                 = 0.2, so at Kaiming init the informative directions moved the
+                 pre-activation ~5x LESS than the activation's transition width:
+                 the net was near-LINEAR in exactly the directions carrying the
+                 signal. D2's families never hit this -- they feed points uniform
+                 on [-4,4]^d, isotropic and ~10x larger in norm.
+                 PROOF, not inference: the raw-units net (val 4.784e-1, resid
+                 69.8%) is indistinguishable from a plain LINEAR least-squares fit
+                 (5.014e-1, 71.5%). 181k parameters and 50k steps had bought
+                 nothing a 64x64 matrix could not.
+                 FIX: z = (y-mu)/s. A change of UNITS, not a model choice --
+                 J(y) = J_tilde((y-mu)/s) is convex in y iff J_tilde is convex in
+                 z (affine precomposition), so the ICNN guarantee is untouched, and
+                 grad_y J = grad_z J_tilde / s. Measured: s = 0.197..0.200 across
+                 all 64 coordinates, so it is ~a global rescale by 5; within-patch
+                 variation 0.039 -> 0.198, matching Softplus's bend width; z lands
+                 in -2..+2.3, i.e. D2's regime. Same 50k budget: 4.784e-1 -> 1.528e-1.
+                 The linear fit's matrix is 90% symmetric with 98% positive
+                 eigenvalues, so the target IS the gradient field of a convex
+                 function -- the data is consistent with the theory -- and a linear
+                 model explains only ~50% of the variance, so f_reg is genuinely
+                 nonlinear. The problem is real, not trivial.
+
+                 DESIGN.md's S=50000 IS WRONG TWICE OVER, and it was inherited
+                 unexamined from the l1 notebook's SCOPING budget at n=8. (17)'s
+                 lesson again: at step 50k, a run still at lr=1e-3 sits at 6.9e-2
+                 while the one that decayed at 25k finished at 1.53e-1 -- the decay
+                 was premature by 2.1x and the loss was still falling steeply.
+                 BUDGET IS NOT THE BINDING CONSTRAINT THOUGH: in raw units, 3.6x
+                 more high-LR steps (25k -> 90k) bought 4.6% (4.78e-1 -> 4.56e-1).
+                 It was stuck on the conditioning, not the learning rate. The
+                 earlier claim that it had "converged" is RETRACTED: a plateau at
+                 lr=1e-5 after two decays cannot be told from being stuck.
+
+                 N IS NOT BINDING. N=5000 tracks N=20000 within ~10% (val 1.61e-1
+                 vs 1.47e-1 at step 30k), reproducing (13)'s "4x the data buys
+                 <10%". And train/val is 0.149/0.153 at N=20000 -- a 2.7% gap, so
+                 the net UNDER-FITS: it cannot fit the data it already has, and
+                 more data cannot help. N=5000 shows a 14% gap by contrast.
+                 NOTE for planning: cutting N saves NO training time at a fixed
+                 step budget -- only SAMPLER time. Use N=5000 where sampling is the
+                 cost (the Step-3 m-sweep: m=32000 is 52 min at N=20000, 13 at 5000).
+
+                 WIDTH IS NOT THE LEVER (matched steps, standardized, N=20000):
+                 256/512/1024 track within a few % and CROSS OVER (1024 ahead at
+                 step 30k, behind at 40k), and 512 DIVERGED mid-run (4.6e-2 ->
+                 1.9e-1 at step 110k, before any LR decay). More width buys
+                 fragility, not accuracy. The ~224-unit capacity estimate was
+                 wrong. REJECTED (circular): handing the net the neighbour-
+                 difference directions -- assuming f_reg is pairwise-TV assumes
+                 the answer.
+
+                 STEP 3 -- THE m-SWEEP. Three nets matched at N=5000, w256,
+                 S=250000, m in {2000,8000,32000}; m=2000/32000 sampled at N=5000
+                 (--scale 0.25; m=32000 was 89 min there vs ~6 h at full N). Eval
+                 (cameraman) prox residual:
+                     m= 2000  delta 4.48%  resid 22.34%
+                     m= 8000  delta 1.86%  resid 13.62%   (N=20000 gave 13.4% --
+                     m=32000  delta 1.16%  resid 10.14%    N barely moves it)
+                 16x more sweeps cut the residual 2.2x; pure m^-1/2 predicts 4x, a
+                 flat plateau predicts 1x. So it is NEITHER purely sampler-limited
+                 NOR model-limited. Fit resid^2 = floor^2 + kappa^2 delta^2:
+                     FLOOR ~ 9.7%  (m -> inf, delta-independent = model error)
+                     kappa ~ 4.5   (sampler-noise amplification; Hutchinson on the
+                                    trained net's Hessian gave 8.85, and regression
+                                    attenuation ~halves it, as predicted)
+                 corr(J,TV) = +0.98..+0.99 at every m.
+
+                 READING. The residual DOES fall with sampling, and the fit cleanly
+                 separates the sampler's amplified noise from a ~10% floor set by
+                 the convex-net FIT, not by N (5000~20000) or width (256~512~1024).
+                 DESIGN.md's rule ("resid ~ delta => success") was the wrong test:
+                 evaluating on a noisy y-hat gives a residual of ~(kappa+1)*delta
+                 even for a PERFECT J_theta, so delta was never the reachable floor.
+                 The reachable floor is ~10%, and we are within a few % of it at
+                 m=32000. HEADLINE (m=8000, N=20000): resid 13.4% eval, corr 0.99,
+                 transfers Barbara->cameraman at +8%. NOT machine-precision like the
+                 l1 example (0.05% prox residual, EXACT targets) -- the gap is the
+                 MCMC targets' errors-in-variables, now measured, not guessed.
+                 B15 [07-18] ACTIVATION SHARPNESS (user's insight: f_reg is a TV
+                 kink, NOT smooth; Softplus(beta=5) is smooth). Measured f_reg's
+                 kink at n=2 by quadrature: curvature peak 3.6, rounded over ~0.038
+                 (= the Cole-Hopf scale eps=0.024). The n=64 neighbour differences
+                 the net must resolve have MEDIAN 0.0083 (~0.04 in z-units), while
+                 Softplus(beta=5) bends over ~0.2 -- 5x too smooth, the SAME factor
+                 as the units bug (B14), now at the activation. Matching the bend to
+                 the median difference predicts beta ~ 20.
+                 beta sweep, headline setting (N=20000, m=8000, w256, S=250000):
+                     beta= 5  resid 13.4%  val 2.00e-2   (baseline)
+                     beta=10  resid 11.1%  val 8.2e-3
+                     beta=20  resid 10.7%  val 7.3e-3    <- best, AS PREDICTED
+                     beta=40  resid 10.7%  val 8.3e-3    (no gain; val ticks up --
+                                                          near-ReLU is harder to
+                                                          train, the width-512
+                                                          instability's cousin)
+                 The curve turns exactly at the predicted beta, so the mechanism is
+                 real. TRAINING loss fell 2.7x (2.00e-2 -> 7.3e-3): the net fits
+                 f_reg materially better, not just scores better. corr(J,TV) +0.99.
+                 ADOPTED beta=20 as the tv_pm production setting (a tv_pm-LOCAL
+                 deviation from D2's beta=5, like the l1 example's width 128 --
+                 NOT a change to the four production families).
+                 Decomposition: at m=8000, delta=1.86%, kappa*delta~8.4% (kappa~4.5
+                 from the beta=5 m-sweep). resid(beta=5)=13.4 => floor~9.7%;
+                 resid(beta=20)=10.7 => floor~6.6% IF kappa is unchanged. So beta
+                 plausibly lowered the MODEL FLOOR ~9.7 -> ~6.6%, not just the
+                 m=8000 point -- but that assumes kappa fixed, and a sharper net has
+                 higher kink curvature, so kappa may have risen. Cleanly separating
+                 the two needs the m-sweep RE-RUN at beta=20 (cached m=2000/32000,
+                 NO new sampling; ~2 h of training).
+                 DEPTH IS NOT A LEVER EITHER (user asked; conv-ICNN parked for
+                 later). layers 2 -> 3 at beta=20, headline setting:
+                     layers=2  resid 10.69%  val 7.27e-3   (263k vs 181k params)
+                     layers=3  resid 10.97%  val 8.16e-3   <- WORSE, both metrics
+                 The extra layer buys nothing and slightly hurts -- the deeper ICNN
+                 is harder to optimize, so the best checkpoint is worse. Third
+                 capacity/architecture lever to come up empty (width, depth), while
+                 the three that WORKED (units, high-LR steps, beta) all MATCHED the
+                 net to the problem's scales rather than adding parameters. Supports
+                 the ~7-10% floor being structural for a plain FC-ICNN here.
+                 CONV-ICNN (locality + shift-invariance, the RIGHT inductive bias
+                 for a TV prior, not just more capacity) is the parked option with
+                 real headroom.
+                 OPEN (user call): re-run the m-sweep at beta=20 to nail the new
+                 floor, adopt beta=20 L2 (resid 10.7%, corr 0.99) and go to Step 4,
+                 or build the conv-ICNN.
+
+2026-07-19 (3)   tv_pm NOTEBOOK + docs/status refresh for handoff. New:
+                 recover_tv.ipynb -- the experiment end to end (data -> load ckpt
+                 or retrain -> score -> qualitative figures -> denoising), a THIN
+                 wrapper over the modules (no math in the notebook), ARCH selector
+                 fc|conv (default fc), RETRAIN flag (default False = shipped
+                 checkpoint). Committed EXECUTED at ARCH=fc: reproduces 10.69%
+                 eval residual, corr 0.989, denoise match 43.7 dB / rel-L2 1.25%.
+                 Added recover.load_checkpoint() + Units.from_saved() so the
+                 notebook scores a shipped net with no retrain. Refreshed status in
+                 tv_pm/README.md (was "nothing is a result yet" -- stale), DESIGN.md
+                 (Steps 0-4 done), MANUAL.md (notebook as entry point),
+                 results/README.md, and notebooks/README.md. Reminder throughout:
+                 single-seed, OBSERVATIONS not conclusions.
+
+2026-07-19 (2)   tv_pm m-SWEEP AT beta=20 (fc only, user's request).
+                 THESE ARE OBSERVATIONS, NOT CONCLUSIONS: single seed, no repeats,
+                 no error bars; floor/kappa are a 2-param fit to 3 m-points;
+                 "sampler-limited" is an inference from a slope. What these runs
+                 SHOWED, to be confirmed (seeds/repeats/more m) before it is a claim.
+                 OBSERVED: beta=20 lowered the fitted floor ~9.7 -> ~6.4%, and the
+                 residual keeps falling with m (not floored at production m).
+                 3 fc runs, N=5000, standardized, beta=20, S=250000, cached data
+                 (no new sampling); ~85 min each detached, logs/m_sweep_b20/.
+                 Eval (cameraman) residual vs m:
+                     m= 2000  delta 4.48%  resid 20.55%   (beta=5 was 22.34)
+                     m= 8000  delta 1.86%  resid 11.28%   (beta=5 was 13.62)
+                     m=32000  delta 1.16%  resid  7.02%   (beta=5 was 10.14)
+                 Fit resid^2 = floor^2 + kappa^2 delta^2:
+                     beta=5 : floor 9.71%  kappa 4.50
+                     beta=20: floor 6.42%  kappa 4.37
+                 kappa UNCHANGED (4.5 -> 4.4): it is f_reg's curvature
+                 amplification, a property of the PROBLEM not the net, so it must
+                 not move with beta -- a clean consistency check. floor DROPPED,
+                 confirming (2026-07-18)'s conjecture that beta lowered the model
+                 floor, not just the m=8000 point.
+                 REVISED CONCLUSION: at beta=20 the production residual (~10.7% at
+                 m=8000) is PARTLY SAMPLER-LIMITED, not a hard floor: m=32000
+                 reaches 7.02% and the descent is only mildly decelerating. So more
+                 MCMC sweeps keep helping, toward the ~6.4% floor (which the fit may
+                 even over-estimate -- the m=32000 point undershoots it). This is
+                 more positive than the beta=5 read ("stuck at ~9.7%"). If a better
+                 headline is wanted, m=32000 buys ~7% at 4x sampler cost.
+                 Caveat: N=5000 (sweep) vs 20000 (production); N barely matters
+                 (~10% at 4x), and m=8000 N=5000 (11.28%) ~ production N=20000
+                 (10.7%), so the slope carries over.
+
+2026-07-19 (1)   tv_pm STEP 4 + the PRIOR IN ACTION (the critical demonstration).
+                 New: step4_figures.py (qualitative panels) and denoise_demo.py
+                 (the prox-denoising test). Figures + metrics.csv + README in
+                 notebooks/tv_pm/results/. Nothing in src/, bin/ or the four
+                 production notebooks touched.
+
+                 THE DEMONSTRATION THAT MATTERS. The scatter/kernel figures show
+                 the recovered prior CORRELATES with TV; they do not show it WORKS.
+                 denoise_demo.py does: the posterior-mean denoiser IS the prox of
+                 f_reg, u_PM(x) = argmin_u f_reg(u) + 1/2||u-x||^2, and we trained
+                 grad J_theta(u) ~ x-u (right SCALE, not just up to a constant), so
+                 u_hat(x) = argmin_u J_theta(u) + 1/2||u-x||^2 must reproduce u_PM
+                 if the recovery is faithful. Convex program (ICNN + quadratic),
+                 solved by L-BFGS; optimality residual 7e-4 (fc), 2e-3 (conv).
+                 Cameraman, 8x8 patches, sigma=10/256, u_PM from the sampler:
+                     noisy 28.3 dB | u_PM 29.6 dB (vs clean)
+                     u_hat FC   28.8 dB,  PSNR(u_hat,u_PM) = 43.7 dB
+                     u_hat CONV 29.5 dB,  PSNR(u_hat,u_PM) = 54.0 dB
+                 The learned prior REPRODUCES the denoiser: u_PM and u_hat are
+                 visually identical; the |u_hat - u_PM| residual lives at EDGES,
+                 where f_reg is most nonlinear and the ~10% gradient error bites.
+                 (Denoising is gentle -- small sigma -- so the point is the MATCH,
+                 not the dB gain over noisy.)
+
+                 FUNCTIONAL TEST FLIPS THE CONV VERDICT. On the abstract held-out
+                 prox residual FC and CONV TIED (10.69 vs 10.88%). On the test that
+                 matters -- does the prox reproduce the denoiser -- CONV is 10 dB
+                 BETTER (54.0 vs 43.7), and u_hat_conv (29.5) ~ u_PM (29.6), i.e.
+                 the conv-recovered prior denoises essentially AS WELL as the true
+                 denoiser. The conv's cleaner recovery (corr 0.997 vs 0.989) shows
+                 up where it counts; the gradient-residual metric could not see it.
+                 Patch-wise (8x8), so both u_PM and u_hat carry block structure --
+                 a property of the patch model, fair to the comparison.
+
+                 BARBARA CONFIRMS + a transfer story (added SSIM and rel-L2 to
+                 denoise_demo.py; scipy SSIM, no skimage). u_hat vs u_PM:
+                     Barbara(train)  fc  59.1 dB  SSIM 0.9998  rel-L2 0.22%
+                     Barbara(train)  conv 57.7 dB SSIM 0.9997  rel-L2 0.26%
+                     cameraman(xfer) fc  43.7 dB  SSIM 0.9987  rel-L2 1.25%
+                     cameraman(xfer) conv 54.0 dB SSIM 0.9995  rel-L2 0.38%
+                 IN-DISTRIBUTION both reproduce the denoiser ~perfectly (~0.2%
+                 rel-L2), fc a hair ahead. ON TRANSFER conv generalizes better
+                 (0.38 vs 1.25%): shift-invariance is a generalization prior, pays
+                 off off the training image -- the plug-and-play regime. THAT, not
+                 the tied gradient residual, is the case for the conv.
+                 METRIC NOTE: PSNR is standard (log-MSE) but paired with SSIM in
+                 the literature; for the recovery claim rel-L2 is most informative
+                 (comparable to the ~10% prox residual). All three reported.
+
+2026-07-18 (2)   tv_pm CONV-ICNN built, convexity VERIFIED, full run launched.
+                 New: conv_icnn.py (ConvICNN), test_conv_icnn.py (convexity gate).
+                 recover.py gains --arch fc|conv, --channels, --blocks, a GLOBAL
+                 standardization mode (Units glob=), and arch in the ckpt name.
+                 Nothing in src/, bin/ or the four production notebooks touched.
+
+                 WHY. Width AND depth both failed to move the FC floor (~10.7%);
+                 the three levers that worked (units, high-LR steps, beta) all
+                 MATCHED the net to the problem's scales. f_reg ~ sum_sites
+                 phi(local nbhd) is LOCAL + SHIFT-INVARIANT; a dense net must learn
+                 both from data. A conv-ICNN builds them in: 19.5k params vs 181k,
+                 every kernel reused across all 64 sites.
+                 NOT CIRCULAR: assumes only locality + shift-invariance (properties
+                 of any image prior, and KNOWN here -- the denoiser is anisotropic
+                 TV + box). Unlike handing it y_i-y_j, a 3x3 conv can learn any
+                 local shift-invariant convex functional, not just pairwise TV.
+
+                 CONVEXITY, proven and TESTED. Amos et al. 2017 Prop.1 (nonneg
+                 feature-path weights + convex nondecreasing activation) applies
+                 VERBATIM to convolutions -- a conv is linear -- read on the KERNEL
+                 entries (Mukherjee et al. 2020, arXiv:2008.02839, do this for
+                 imaging). conv_icnn.py: in_conv/skip unconstrained (affine in y),
+                 feat convs + head NONNEGATIVE (wclip), Softplus(beta=20) convex
+                 increasing (a non-monotone activation would break it, cf. B5).
+                 test_conv_icnn.py GATE (5 checks + teeth): midpoint inequality,
+                 convex along random lines, full 64x64 input-Hessian PSD
+                 (lambda_min +13.7), wclip clamps, and a NEGATIVE CONTROL -- a
+                 negative head weight makes J concave and the checker catches it
+                 (my first teeth attempt, negating FEATURE kernels, was too weak:
+                 Softplus(20) saturates and the affine skips dominate, leaving the
+                 net incidentally convex -- a fact about that perturbation, not a
+                 hole; the head-sign control is guaranteed concave). PASSES.
+
+                 TWO FAILED FIRST ATTEMPTS, documented so nobody repeats them:
+                 (a) SUM-pool over the 64 sites inflated J's initial gradient
+                 ~1000x past the target; Adam could not recover (val loss 9779,
+                 corr ~0). Fix: MEAN-pool -- convexity-safe (positive scalar) and
+                 representationally identical (head absorbs the H*W factor), starts
+                 J at O(1) like the FC net. (b) Per-pixel standardization would
+                 BREAK shift-invariance; conv REQUIRES global (scalar) mu,s, which
+                 is free here (s=0.197..0.200 uniform).
+                 Boundary: reflect padding (TV does not wrap; circular would impose
+                 periodic TV). All fixed paddings are linear => convexity-safe.
+
+                 SMOKE (2000 steps, N=4000): val loss 0.69, corr(J,TV) +0.56 on
+                 cameraman -- learning sanely. COST: conv double-backprop is ~5-6x
+                 slower/step than FC, so 250k steps ~ 13 h CPU (ran 1170 min).
+
+                 RESULT -- CONV TIES FC, does NOT break the floor:
+                     FC   beta=20:  resid 10.69%  val 7.27e-3  corr +0.99
+                     CONV beta=20:  resid 10.88%  val 7.93e-3  corr +0.997
+                 Indistinguishable on residual, despite the RIGHT inductive bias
+                 and 9x fewer params (19.5k vs 181k). This is the FOURTH capacity/
+                 architecture lever to come up empty (width, depth, conv). When
+                 even the structurally-correct architecture cannot get below ~10%,
+                 the floor is almost certainly NOT network expressivity. With the
+                 m-sweep decomposition (resid^2 = floor^2 + (kappa*delta)^2), the
+                 coherent story is: the residual is limited by the ERRORS-IN-
+                 VARIABLES cost of MCMC targets (noise in y-hat moves the point the
+                 target attaches to), which no better net can remove. Stronger than
+                 "10.7% with a dense net" -- it names the bottleneck.
+                 UPSIDES: corr(J,TV) +0.997 is the HIGHEST of any run (cleanest
+                 TV-shaped recovery, good for the figures); and matching accuracy
+                 at 9x fewer params is a real efficiency result. Learned-kernel
+                 inspection (do first-layer kernels emerge as [+1,-1] stencils?)
+                 still a figure worth having.
+                 Checkpoint: logs/ckpt/tv_pm_64D_conv_m8000_C32_B2_b20.0_s250000.pth
+                 Log:        logs/beta_sweep/conv_C32_B2_beta20.log
+                 => Recovery is DONE at ~10.7% (FC or conv). Next: Step 4 figures,
+                 then SAVE results (checkpoints/metrics/figures) so a colleague need
+                 not rerun -- note logs/, data/, *.pth are all gitignored.
+
+2026-07-17 (1)   tv_pm STEP 0 GATE PASSED: the TV sampler is UNBIASED with TV on.
+                 New: notebooks/tv_pm/quadrature.py (exact u_PM, S_eps, psi,
+                 f_reg at n=2, TV present) + test_quadrature.py (6 checks, ~40s).
+                 Nothing in src/, bin/ or the four production notebooks touched.
+
+                 WHY. test_sampler.py pins the TV arithmetic exactly and the
+                 kernel only at w=0 -- TV OFF. The experiment runs at w=1, and
+                 finite burn-in makes u_PM BIASED, not merely noisy. That is the
+                 one failure the design cannot see: the held-out prox residual is
+                 scored against the same y-hat used to fit, so a biased y-hat
+                 means fitting the prox of the WRONG function while the residual
+                 stays low. Bounded here at n=2 or nowhere.
+
+                 METHOD. At n=2, u_PM is a 2-D integral, no MCMC. Rotating to
+                 s=(u1+u2)/sqrt2, r=(u1-u2)/sqrt2 puts TV on r ALONE: the
+                 s-integral is then a truncated-Gaussian moment (closed form,
+                 erf) and only r is quadratured, with Gauss-Legendre on each side
+                 of the kink -- analytic there, so spectral. Converged to 3.3e-15
+                 in n_gl; agrees with a dumb 2048^2 dense grid to 3.6e-7 (grid-
+                 limited across the kink; kept as an independent witness so the
+                 rotation is checked against algebra it does not share); hits the
+                 w=0 truncated-Gaussian oracle to 3.3e-16.
+
+                 RESULT (50 x, 128 independent chains, scored on the target x-y):
+                     sweeps  pooled err  RMS z  1-chain  shrinkage b
+                        500     0.729%    0.97    8.65%  +0.023% (+0.3 se)
+                       2000     0.370%    0.96    4.44%  +0.016% (+0.4 se)
+                       8000     0.187%    0.99    2.21%  -0.018% (-1.0 se)
+                      32000     0.089%    0.94    1.10%  +0.011% (+1.2 se)
+                 RMS z ~ 1 at EVERY m -- the deviation from quadrature is exactly
+                 one standard error, i.e. pure MC scatter -- and the error falls
+                 like m^-1/2 with no floor. At m=8000, |bias| < 0.055% at 2 se,
+                 ~40x under the 2.2% noise of the ONE chain per x_k that Step 1
+                 runs. The prox residual will be read against noise, not bias.
+
+                 IDENTITY CHAIN verified with TV on, quadrature-available at n=2
+                 and nowhere else: grad psi = u_PM to 3.9e-11, and
+                 grad f_reg(y) = x - y to 5.2e-11 at y = u_PM(x). The quantity
+                 Step 2 regresses on is checked, not assumed.
+
+                 THE PLAN'S GATE WAS WRONG, NOT THE SAMPLER. DESIGN.md set it at
+                 "~0.1% from quadrature". Cannot be a property of the sampler: the
+                 pooled error is delta/sqrt(reps), so thresholding it tests how
+                 many chains the TEST runs. It reads 0.187% at m=8000 only because
+                 128 chains were pooled, and a literal reading FAILS a sampler
+                 that is fine. Replaced by a direct bias bound: a signed SHRINKAGE
+                 statistic b, projecting each chain's target onto the exact one
+                 and pooling over every x at once (another sqrt(100) of
+                 resolution, free). Signed because burn-in bias has a known
+                 direction -- chains start at u0 = x, so an under-burned chain
+                 leaves y too close to x and the target too SHORT (b < 0). No such
+                 thing: b flips sign and stays inside +/-1.2 se.
+
+                 NOTE. 1-chain noise at n=2 is 2.2% at m=8000 vs 1.2% at n=64 in
+                 noise_diagnostic.ipynb. Not a contradiction -- the diagnostic's
+                 sqrt(n) signal/noise argument is asymptotic and n=2 is as far
+                 from it as possible -- but n=2 is a PESSIMISTIC noise proxy and
+                 the n=64 figure stands.
 
 2026-07-09 (17)  SCHEDULE. Do NOT copy the paper's decay cadence. The paper is
                  FULL-BATCH, so one of its "epochs" is one gradient step: 5e5

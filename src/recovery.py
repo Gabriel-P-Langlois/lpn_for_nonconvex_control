@@ -115,7 +115,7 @@ def route_report(J, J_true, x, y, model, model_G):
 
 
 # ----------------------------- Route 2 --------------------------------------
-def conjugate_samples(x_k, model):
+def conjugate_samples(x_k, model, chunk=50_000):
     """Generate Route-2 training pairs (y_k, G_k) from the first network.
 
     y_k = grad psi(x_k),  G_k = <y_k, x_k> - psi(x_k)  (a sample of psi*(y_k)),
@@ -124,16 +124,24 @@ def conjugate_samples(x_k, model):
     One forward + one backward: the old version called model.scalar(x_k) and then
     model(x_k), and the latter recomputes scalar internally, so psi was evaluated
     twice per call.
+
+    CHUNKED over the sample axis. The autograd graph holds an (n, 256) activation
+    per hidden layer, so a single pass over the whole training set costs ~n KB *
+    hidden * layers: at d=64, N = 15000*64 = 960000, that is several GB and the
+    sweep dies late. The gradient at x_k depends only on x_k, so chunking is
+    exact, not an approximation.
     """
     device = next(model.parameters()).device
-    xk = torch.tensor(np.asarray(x_k)).float().to(device).requires_grad_(True)
-    psi_xk = model.scalar(xk)
-    yk = torch.autograd.grad(psi_xk.sum(), xk)[0]
-    Gk = torch.sum(yk * xk, dim=1, keepdim=True) - psi_xk
-    return (
-        yk.detach().cpu().numpy(),
-        Gk.detach().cpu().numpy(),
-    )
+    x_k = np.asarray(x_k)
+    ys, Gs = [], []
+    for i in range(0, len(x_k), chunk):
+        xk = torch.tensor(x_k[i : i + chunk]).float().to(device).requires_grad_(True)
+        psi_xk = model.scalar(xk)
+        yk = torch.autograd.grad(psi_xk.sum(), xk)[0]
+        Gk = torch.sum(yk * xk, dim=1, keepdim=True) - psi_xk
+        ys.append(yk.detach().cpu().numpy())
+        Gs.append(Gk.detach().cpu().numpy())
+    return np.concatenate(ys), np.concatenate(Gs)
 
 
 def evaluate_learned_prior_G(x, model_G):
