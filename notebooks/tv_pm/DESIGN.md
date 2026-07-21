@@ -1,5 +1,10 @@
 # Plan: recover the TV denoiser's implicit regularizer
 
+> **Historical record.** Filenames below predate the `tvpm/` package (e.g.
+> `recover.py` → `tvpm/recover.py`, `step4_figures.py` → `tvpm/figures.py`,
+> `conv_icnn.py` → `tvpm/icnn.py`, `denoise_demo.py` → `tvpm/denoise.py`; tests
+> moved to `tests/`). For current commands and layout see `MANUAL.md`.
+
 Status (2026-07-19): **complete through the demonstration.** Steps 0–4 done;
 production recovery ~10.7% held-out prox residual (fc and conv tie), and its prox
 **reproduces the posterior-mean denoiser** (`results/`, `denoise_demo.py`). The

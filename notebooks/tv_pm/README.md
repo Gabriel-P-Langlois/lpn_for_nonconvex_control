@@ -6,23 +6,25 @@ network**. Status: **complete through the demonstration** — the recovered prio
 prox reproduces the denoiser (see `results/`). Everything is **preliminary and
 single-seed** (observations, not conclusions — see `DESIGN.md`).
 
-**Start with `recover_tv.ipynb`** (the experiment, `ARCH = fc|conv`, committed
-executed) or **`MANUAL.md`** (copy-paste commands to reproduce).
+**Start with `recover_tv.ipynb`** (the experiment, `ARCH = fc|conv`) or
+**`MANUAL.md`** (copy-paste commands to reproduce).
 
 | file | what it is |
 |---|---|
-| **`recover_tv.ipynb`** | **the experiment end to end** — data → model → score → figures → denoising; `ARCH` selects fc/conv (default fc); committed executed |
+| **`recover_tv.ipynb`** | **the experiment end to end** — data → model → score → figures → denoising; `ARCH` selects fc/conv (default fc) |
 | `MANUAL.md` | short reproduce-from-scratch / from-checkpoints instructions |
 | `DESIGN.md` | the plan and full audit trail — **read this for the story**; colleague summary at the top, Conv-ICNN section at the bottom |
-| `sampler.py` | batched posterior-mean sampler for anisotropic TV, ported from MATLAB |
-| `test_sampler.py` | pins the sampler — must pass before anything here is believed |
-| `quadrature.py` | exact `u_PM`, `S_ε`, `ψ`, `f_reg` at `n=2`, TV present — the only exact reference in this example |
-| `test_quadrature.py` | the Step-0 gate: **the sampler is unbiased with TV on** (~40 s) |
-| `dataset.py` | Step 1: patches → `x_k` → `y_k = u_PM(x_k)`, cached to `data/` (`--sweeps`, `--scale`) |
-| `recover.py` | Steps 2–3: train one convex net on the gradients + score (`--arch fc\|conv`, `--beta`, `--standardize`, …) |
-| `conv_icnn.py` | convolutional ICNN — locality + shift-invariance for the TV prior; provably convex, 19.5k params |
-| `test_conv_icnn.py` | the conv-ICNN **convexity gate** — must pass before training |
-| `step4_figures.py`, `denoise_demo.py` | the qualitative figures and the denoising demonstration |
+| `tvpm/sampler.py` | batched posterior-mean sampler for anisotropic TV, ported from MATLAB |
+| `tests/test_sampler.py` | pins the sampler — must pass before anything here is believed |
+| `tvpm/quadrature.py` | exact `u_PM`, `S_ε`, `ψ`, `f_reg` at `n=2`, TV present — the only exact reference in this example |
+| `tests/test_quadrature.py` | the Step-0 gate: **the sampler is unbiased with TV on** (~40 s) |
+| `tvpm/dataset.py` | Step 1: patches → `x_k` → `y_k = u_PM(x_k)`, cached to `data/` (`--sweeps`, `--scale`) |
+| `tvpm/recover.py` | Steps 2–3: train one convex net on the gradients + score (`--arch fc\|conv`, `--beta`, `--standardize`, …) |
+| `tvpm/icnn.py` | convolutional ICNN — locality + shift-invariance for the TV prior; provably convex, 19.5k params |
+| `tests/test_icnn.py` | the conv-ICNN **convexity gate** — must pass before training |
+| `tvpm/figures.py`, `tvpm/denoise.py` | the qualitative figures, and the prior in action vs the true denoiser |
+| `tvpm/paths.py` | every filesystem location, defined once |
+| `tests/test_params.py` | the `(sigma,t)` algebra, cache keys and checkpoint names |
 | `noise_diagnostic.ipynb` | measures whether the gradient target survives sampler noise |
 | `results/` | shipped figures, `metrics.csv`, checkpoints, and the numbers writeup |
 
@@ -38,7 +40,7 @@ problems to keep the code apart.
 
 ## Provenance
 
-`sampler.py` ports `ideas/old_files/proj1_mcmc_alg_pme.m` (Langlois), preserving
+`tvpm/sampler.py` ports `ideas/old_files/proj1_mcmc_alg_pme.m` (Langlois), preserving
 the model exactly:
 
 ```
@@ -61,7 +63,7 @@ and the calibration stage in `DESIGN.md` are both built on it.
 × 65536 sites × 2 chains ≈ 2.6e9 steps for the noisy Barbara. Prior recovery
 needs `u_PM(x_k)` at `N` *different* `x_k`, which that structure cannot deliver.
 Since the `N` chains are independent and anisotropic TV is a nearest-neighbour
-MRF, `sampler.py` updates one checkerboard colour at a time across every chain
+MRF, `tvpm/sampler.py` updates one checkerboard colour at a time across every chain
 at once — exactly, since same-colour pixels are conditionally independent. The
 chain is unchanged; only the scan order is, and random-with-replacement becomes
 a proper sweep.
@@ -73,7 +75,7 @@ defined only there.
 ## How the sampler is checked
 
 There is no closed-form `u_PM` at `w=1`, so three independent checks bracket it.
-The first two (`test_sampler.py`, 7 assertions) leave a hole; the third closes it.
+The first two (`tests/test_sampler.py`, 7 assertions) leave a hole; the third closes it.
 
 - **the TV term** — the incremental `ΔE` the MH step uses must equal `energy()`
   computed from scratch (1.1e-14). The same test confirms it *fails* when both
@@ -82,7 +84,7 @@ The first two (`test_sampler.py`, 7 assertions) leave a hole; the third closes i
   `N(x_i, σ²)` truncated to `[0,1]`, whose mean is closed-form. Pooled over 512
   chains, `u_PM` matches it to 1.2e-4, and the error decays like `m^{-1/2}`, so
   the sampler is unbiased rather than merely close.
-- **the distribution itself, at `w=1`** (`test_quadrature.py`) — the two above
+- **the distribution itself, at `w=1`** (`tests/test_quadrature.py`) — the two above
   cover the arithmetic and the `w=0` kernel, but not the claim that the chain
   samples the right distribution *with TV on*. It does. At `n=2`, `u_PM` is a 2-D
   integral needing no MCMC, so it is computed exactly (rotate to `s,r`: TV touches
@@ -126,7 +128,7 @@ ground truth for. Only a real run answers it.
 ## Running
 
 ```
-~/miniforge3/envs/lpn_env/bin/python notebooks/tv_pm/test_sampler.py      # ~3 s
-~/miniforge3/envs/lpn_env/bin/python notebooks/tv_pm/test_quadrature.py   # ~40 s
+~/miniforge3/envs/lpn_env/bin/python notebooks/tv_pm/tests/test_sampler.py      # ~3 s
+~/miniforge3/envs/lpn_env/bin/python notebooks/tv_pm/tests/test_quadrature.py   # ~40 s
 ```
-The notebook runs from this directory (`sys.path` assumes it) and takes ~90 s.
+The notebook runs from this directory (`sys.path` assumes it).

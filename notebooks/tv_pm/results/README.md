@@ -34,8 +34,8 @@ is not a hard limit.
 | `denoise_conv_cameraman.{png,pdf}` | same with the conv prior: **PSNR(û, u_PM) = 54.0 dB** — reproduces the denoiser 10 dB better than FC |
 
 Regenerate (from checkpoints, no retraining):
-`python ../step4_figures.py`   (qualitative panels, seconds)
-`python ../denoise_demo.py --arch conv`   (denoising demo, ~2 min: sampler + prox solve)
+`python -m tvpm.figures` (from ../)   (qualitative panels, seconds)
+`python -m tvpm.denoise --arch conv` (from ../)   (denoising demo, ~2 min: sampler + prox solve)
 
 ## The demonstration that matters (`denoise_*` figures)
 
@@ -97,7 +97,7 @@ The story in one line each:
 cached to `../data/`), then `recover.py --arch fc --standardize --beta 20 --steps
 250000` (~2 h) or `--arch conv` (~13 h, CPU — conv double-backprop is 6.8× the
 FLOPs of the dense net despite fewer parameters). The convexity gate
-`test_conv_icnn.py` must pass before trusting any conv result.
+`tests/test_icnn.py` must pass before trusting any conv result.
 
 ## Handoff — what travels, and what a colleague can do with it
 
@@ -111,13 +111,13 @@ copy-paste-and-push, a colleague receives:
   (< 1 MB each). The scripts and `../recover_tv.ipynb` look here automatically when
   `../../logs/ckpt/` is absent, so a colleague can **regenerate every figure
   without retraining**: run `../recover_tv.ipynb`, or
-  `python ../step4_figures.py` and `python ../denoise_demo.py --arch conv`.
+  `python -m tvpm.figures` (from ../) and `python -m tvpm.denoise --arch conv` (from ../).
 
 What does NOT travel (by `.gitignore`):
 - `../data/` — cached sampler output. Regenerable with `python ../dataset.py`
   (~15 min); needed only to re-*train* or re-*score*, not to regenerate the
-  figures from the shipped checkpoints (`denoise_demo.py` re-samples `u_PM` itself;
-  `step4_figures.py` needs `data/eval_8x8_m8000.npz`, so run `dataset.py` first if
+  figures from the shipped checkpoints (`tvpm/denoise.py` re-samples `u_PM` itself;
+  `tvpm/figures.py` needs `data/eval_8x8_m8000.npz`, so run `tvpm.dataset` first if
   extending the qualitative panels).
 - `../../logs/` — other checkpoints and training logs (the `beta` and `m` sweeps
   were run with `--no-save`; only the two production nets are kept).

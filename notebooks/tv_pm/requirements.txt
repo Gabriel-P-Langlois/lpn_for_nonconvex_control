@@ -1,0 +1,10 @@
+# tv_pm dependencies. Versions are those the results were produced with;
+# `>=` because nothing here uses a bleeding-edge API. CPU-only torch is fine.
+#   python -m venv env && env/bin/pip install -r requirements.txt
+numpy>=2.3
+scipy>=1.16
+torch>=2.8
+matplotlib>=3.10
+Pillow>=11.3
+ipython>=9.6          # notebook display
+# To run recover_tv.ipynb non-interactively: jupyter, nbconvert.
