@@ -1,6 +1,6 @@
 """Max-plus prior J(x) = max_i {<p_i, x> - 0.5||p_i||^2}.   NOT IN main.pdf.
 
-Ported from exps/exp_4_1_4_minplus_8D.ipynb. Same corrections and caveats as
+Ported from legacy/old_notebooks/exp_4_1_4_minplus_8D.ipynb. Same corrections and caveats as
 maxplus_case3.py: the notebook's S(y,1) = max_i <p_i,y> violates S <= J at every
 test point; the corrected Hopf solution lives in src.targets.MaxPlus. See
 bin/not_in_paper/README.md.

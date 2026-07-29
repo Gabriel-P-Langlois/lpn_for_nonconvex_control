@@ -345,8 +345,8 @@ def _project_simplex(V):
 class MaxPlus(Problem):
     """Piecewise-linear (max-plus / Hopf) prior J(x) = max_i {<p_i,x> - gamma_i}.
 
-    NOT REPORTED IN main.pdf. Ported from exps/exp_4_1_3 (gamma = 0) and
-    exps/exp_4_1_4 (gamma_i = 0.5||p_i||^2).
+    NOT REPORTED IN main.pdf. Ported from legacy/old_notebooks/exp_4_1_3 (gamma = 0) and
+    legacy/old_notebooks/exp_4_1_4 (gamma_i = 0.5||p_i||^2).
 
     FIX (2026-07-09): both notebooks had the WRONG HJ solution -- the sign of
     the t*H(p) term was flipped, giving S(y,1) = max_i{<p_i,y> + 0.5||p_i||^2}

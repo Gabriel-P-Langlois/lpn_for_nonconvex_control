@@ -15,8 +15,8 @@ families in `bin/`:
 ## What is here
 
 `maxplus_case3.py`, `maxplus_case4.py` — the max-plus / Hopf priors
-J(x) = maxᵢ {⟨pᵢ,x⟩ − γᵢ}, ported from `exps/exp_4_1_3_minplus_8D.ipynb`
-(γ = 0) and `exps/exp_4_1_4_minplus_8D.ipynb` (γᵢ = ½‖pᵢ‖²). Despite the
+J(x) = maxᵢ {⟨pᵢ,x⟩ − γᵢ}, ported from `legacy/old_notebooks/exp_4_1_3_minplus_8D.ipynb`
+(γ = 0) and `legacy/old_notebooks/exp_4_1_4_minplus_8D.ipynb` (γᵢ = ½‖pᵢ‖²). Despite the
 `minplus` in those filenames they are **max-plus**, unrelated to the paper's
 min-plus mixture-of-quadratics.
 

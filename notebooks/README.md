@@ -24,7 +24,7 @@ steps than D2 — and are not comparable to `logs/summary_d2_full.csv`. Everythi
 below concerns the four production notebooks.
 
 These four notebooks replace the per-(family, dimension) notebooks in
-`(obsolete)_old_exps/`. They are thin wrappers over the shared pipeline
+`legacy/old_notebooks/`. They are thin wrappers over the shared pipeline
 (`bin/_run.py`, figures via `bin/plot.py`): no mathematics lives in a notebook,
 so every correction and protocol amendment lands here automatically. Each
 notebook covers its family at every reported dimension d ∈ {2, 4, 8, 16, 32, 64}:
@@ -38,7 +38,7 @@ visible without running anything. Protocol and audit trail:
 
 ## Old → new
 
-| old notebooks in `(obsolete)_old_exps/` | replaced by |
+| old notebooks in `legacy/old_notebooks/` | replaced by |
 |---|---|
 | `exp_4_1_2_quadratic_{2..64}D.ipynb`, duplicate `exp_L1_prior_{2..64}D.ipynb`, `exp_4_1_2_quadratic_2D_MC.ipynb` | `quadratic_l1.ipynb` |
 | `exp_1_minplus_{2..64}D.ipynb` (+ `8D copy` duplicate) | `minplus.ipynb` |

@@ -6,10 +6,10 @@ map y* = 2x - mu EXPANDS by 2, so _run.py trains psi on [-9,9]^d to cover the
 [-4,4]^d query box. psi = max(psi_1, psi_2) is nonsmooth on the ridge; the
 preimage there has a closed form only because sigma1 == sigma2.
 
-Migrated from exps/exp_1_minplus_{2,4,8,16,32,64}D.ipynb ('8D copy' is a
+Migrated from legacy/old_notebooks/exp_1_minplus_{2,4,8,16,32,64}D.ipynb ('8D copy' is a
 duplicate). NOT migrated: exp_4_1_3 / exp_4_1_4 (max-plus Hopf targets trained
 with LPN's proximal matching loss on a gamma schedule, not MSE on psi) -- these
-need a training-scheme decision and stay in exps/ for now.
+need a training-scheme decision and stay in legacy/old_notebooks/ for now.
 
     python bin/minplus.py --dim 8
 """

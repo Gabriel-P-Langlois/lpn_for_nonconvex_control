@@ -1,7 +1,7 @@
 """Single learned proximal network (LPN) with a Softplus activation.
 
 This is the one canonical network for all experiments (D2 convention). The
-former Mish variant in ``exps/lib/network.py`` broke the input-convexity
+former Mish variant in ``legacy/old_notebooks/lib/network.py`` broke the input-convexity
 guarantee and is deliberately not reproduced here.
 
 The network represents a convex potential ``psi_theta`` via ``scalar`` and its

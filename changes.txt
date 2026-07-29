@@ -288,6 +288,72 @@ C11 [07-16] NEW FAMILY + NEW EXPERIMENT: PosteriorMeanL1 (work2.tex
     S_eps, so they measure a data model now excluded, and they were never quoted
     anywhere. Nothing in the audit or the paper depends on them.
 
+C12 [07-29] Tree reorganized for the GitHub handoff. DELETED (regenerable or
+    cruft): cache/ (232 MB mamba cache), assets/ (7 upstream-README PNGs,
+    referenced nowhere), experiments/ (2 pre-audit checkpoints), .texpadtmp/,
+    tv_pm's _scratch/ (44 MB), the "exp_1_minplus_8D copy" duplicate, all
+    .DS_Store and __pycache__, and the audit's LaTeX aux files. MOVED:
+    (obsolete)_old_exps/ -> legacy/old_notebooks/ (path references in bin/,
+    src/, notebooks/ updated); notebooks/tv_pm/ -> tv_pm/ (top level; it is a
+    package with its own tests and results, not a notebook); ideas/ -> project
+    root (personal material, not for the public repo); docs/ dissolved (its two
+    duplicate PDFs deleted, Darbon 2021 -> ../papers/); the upstream Apache
+    LICENSE -> ext/lpn/. setup.py DELETED: it packaged "lpn", which moved to
+    ext/lpn/ on 07-08, so `pip install -e .` installed an empty package; all
+    imports are `from src...` and need no install. environment.yml replaced:
+    the old file was upstream's fully pinned linux-64 export (py3.9,
+    astra-toolbox) and could not solve on macOS. .gitignore rewritten: results
+    are now TRACKED (logs/ckpt/, logs/*_metrics.json, logs/summary*.csv,
+    logs/superseded/, tv_pm/results/) so the repo is verifiable without an
+    ~18 h resweep; transcripts and per-run figures stay ignored (regenerable
+    via bin/plot.py). README.md layout/install sections updated to match.
+    LICENSE: our code is MIT (top-level LICENSE, user's choice 07-29);
+    ext/lpn/ keeps upstream's Apache 2.0.
+
+C13 [07-29] FIX after C12's move of notebooks/tv_pm/ -> tv_pm/: tvpm/paths.py
+    computed ROOT two levels up from the package, so after the move ROOT
+    resolved to the PROJECT root instead of numerics/ -- `from src.network
+    import LPN` failed at import (no src/ there), LOG_CKPT pointed at a
+    nonexistent <project>/logs/ckpt, and IMAGES only worked by accident
+    (ideas/ happened to move to the project root the same day). ROOT is now
+    one level up (numerics/) and IMAGES is ROOT/../ideas/old_files, explicitly
+    outside the repo. Verified: tvpm imports, the production conv checkpoint
+    resolves via results/ckpt/, IMAGES exists. Lesson: C12's compileall check
+    cannot catch path constants; import the package after a move.
+
+C14 [07-29] tv_pm documentation consolidated + repo made self-contained.
+    (a) MANUAL.md MERGED into tv_pm/README.md (one entry document: files,
+    reproduction, model parameters, settings, provenance, sampler checks,
+    noise diagnostic); DESIGN.md stays as the labeled historical record;
+    results/README.md stays as the numbers write-up. Stale claims fixed in
+    the merge: checkpoints go to ../logs/ckpt (not ../../), REFIT documented,
+    the notebook's cost section (section 5) mentioned, "committed executed"
+    dropped (the committed notebook currently has no outputs; user reruns).
+    (b) The two source images (barbara/cameraman_256x256_d.mat, 220 KB) now
+    SHIP in tv_pm/images/ and paths.IMAGES points there, so a clone can run
+    Stage 1 without ideas/ (which is outside the repo). (c) recover_tv.ipynb:
+    the (SIGMA,T) pair STAYS at (20/256, 20/256) -- user decision 07-29, the
+    experiments will be rerun at this pair; the stale comment calling it "the
+    MATLAB's tabulated pair" corrected (that pair is sigma=10/256, t=16/256,
+    which produced the results currently in results/), "trainign" typo fixed,
+    intro cell now points to README.md instead of MANUAL.md. test_params and
+    test_sampler PASS after the changes.
+
+C15 [07-29] tv_pm README.md and DESIGN.md rewritten for length and register
+    (user request). README (90 lines): orientation + reproduction + model
+    parameters + settings only. DESIGN.md (261 lines): now a plain
+    experimental-design document -- goal, model, method, falsifiability and
+    the delta decision rule, sampler + its three validation checks, Steps 0-4
+    stated as design, the four empirical findings behind the training
+    settings, conv-ICNN, design decisions, failure criteria, open issue.
+    REMOVED from DESIGN: the "For a colleague picking this up" narrative,
+    DONE/PASSED status markers, the superseded original Step-0 gate and its
+    retraction story, the stale Step-2 hyperparameters (beta=5, S=50000), the
+    cost table, and the "Files this will touch" list (all preserved in git
+    history / this changelog). Both files proofread by subagents; corrections
+    applied (American spellings, register, one contradiction: "capacity left
+    the residual unchanged (512 diverged)" -> "did not improve...").
+
 ################################################################
 # 5. SUPERSEDED NUMBERS -- DO NOT CITE
 ################################################################

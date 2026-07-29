@@ -1,6 +1,6 @@
 """Max-plus prior J(x) = max_i <p_i, x>  (gamma = 0).   NOT IN main.pdf.
 
-Ported from exps/exp_4_1_3_minplus_8D.ipynb -- which, despite its filename, is a
+Ported from legacy/old_notebooks/exp_4_1_3_minplus_8D.ipynb -- which, despite its filename, is a
 MAX-plus (Hopf) prior, not the paper's min-plus mixture of quadratics. The
 notebook's S(y,1) = max_i{<p_i,y> + 0.5||p_i||^2} is wrong (it exceeds J
 everywhere); src.targets.MaxPlus carries the corrected Hopf solution. See

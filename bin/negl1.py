@@ -9,7 +9,7 @@ coordinate, so the Route-2 samples y_k = grad psi(x_k) have an interior HOLE
 around the origin. The box margin does not fix this; Route-2 accuracy near
 x = 0 should be read with that in mind.
 
-Migrated from exps/exp_NegL1_prior_{2,4,8,16,32,64}D.ipynb.
+Migrated from legacy/old_notebooks/exp_NegL1_prior_{2,4,8,16,32,64}D.ipynb.
 
     python bin/negl1.py --dim 16
 """
