@@ -27,7 +27,8 @@ import torch
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from tvpm.icnn import ConvICNN
+import tvpm.paths  # noqa: F401  (puts the numerics ROOT on sys.path for src.*)
+from src.conv_icnn import ConvICNN
 
 HW = (8, 8)
 N = HW[0] * HW[1]

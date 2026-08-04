@@ -7,7 +7,7 @@ convex network to (x_k, u_PM(x_k)) pairs recovers f_reg without ever seeing it.
 Two stages, and they share nothing but the cached array between them:
 
     stage 1  dataset/sampler   x_k -> u_PM(x_k) by MCMC        (expensive, cached)
-    stage 2  recover/icnn      fit a convex net to those pairs (expensive, cached)
+    stage 2  recover (nets in src/) fit a convex net to those pairs (expensive, cached)
 
 then figures/ and denoise/ only READ the trained net.
 
@@ -24,8 +24,8 @@ Entry points, in the order a run uses them:
     figures.figure_core(...)   -> what the recovered prior looks like
     denoise.run(...)           -> the prior in action, vs the true denoiser
 """
-from . import dataset, denoise, figures, icnn, paths, quadrature, recover, sampler
+from . import dataset, denoise, figures, paths, quadrature, recover, sampler
 from .sampler import from_sigma_t, params
 
-__all__ = ["dataset", "denoise", "figures", "icnn", "paths", "quadrature",
+__all__ = ["dataset", "denoise", "figures", "paths", "quadrature",
            "recover", "sampler", "from_sigma_t", "params"]

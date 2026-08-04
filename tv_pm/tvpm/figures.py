@@ -32,7 +32,7 @@ matplotlib.use("Agg")                          # headless: save files, no displa
 import matplotlib.pyplot as plt
 
 from . import dataset
-from .icnn import ConvICNN
+from src.conv_icnn import ConvICNN
 from .paths import FIGS as OUT
 from .recover import atv, find_checkpoint, net_value
 from src.network import LPN            # noqa: E402  (paths.py puts ROOT on sys.path)

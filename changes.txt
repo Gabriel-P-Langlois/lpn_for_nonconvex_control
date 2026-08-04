@@ -354,6 +354,249 @@ C15 [07-29] tv_pm README.md and DESIGN.md rewritten for length and register
     applied (American spellings, register, one contradiction: "capacity left
     the residual unchanged (512 diverged)" -> "did not improve...").
 
+C16 [07-29] OPTION-A REORGANIZATION + pnp_reg EXPERIMENT 1. The tv_pm freeze
+    is LIFTED (user decision). Shared machinery promoted to src/:
+    - src/gradfit.py (NEW): train_grad, net_grad, net_value, Units, moved
+      verbatim from tvpm/recover.py (numpy+torch only; model duck-typed on
+      scalar()/wclip()).
+    - src/conv_icnn.py (NEW): ConvICNN moved verbatim from tvpm/icnn.py
+      (deleted). Import sites updated: tvpm/{recover,figures,denoise}.py,
+      tvpm/__init__.py (icnn dropped from the eager imports),
+      tv_pm/tests/test_icnn.py (imports src.conv_icnn via tvpm.paths).
+    - tvpm/recover.py re-imports the moved names, so recover.train_grad etc.
+      keep working for existing callers; the executed notebook is untouched.
+    - All four tv_pm gates PASS before and after (params/sampler/icnn ~5s
+      each, quadrature ~40s).
+    NEW EXPERIMENT DIR numerics/pnp_reg/ (task_pnp_registration.tex Sec 6.1,
+    "Experiment 1: the mixture figure"): pnpreg/{mixture,readout,experiment,
+    figures,paths}.py + tests/{test_mixture,test_readout}.py + executed
+    experiment1_mixture.ipynb + README.md + DESIGN.md; results/ tracked via a
+    .gitignore negation block (figure PNG+PDF + metrics.json only).
+    RESULTS (single seed, sigma=0.5/0.25, LPN hidden=64, 20k steps):
+    semiconvex readout rel L2 vs exact f_reg = 8.9% / 24%, held-out prox
+    residual 0.9% / 0.3%; convex control ~101% / ~100% and flattens the
+    inter-mode bump; min curvature -0.99/-0.00 (a/b) vs exact -1 floor.
+    TWO METHODOLOGICAL POINTS (recorded in pnp_reg/DESIGN.md): (a) metrics
+    must be restricted to the SAMPLED range of D ([0.5%,99.5%] quantiles of
+    y) -- the regularizer is pinned only there (thm:prior_optimality); a fixed
+    [-4,4] window read 68% where the pinned region reads 8.9%. (b) curvature
+    metrics need a decimated stencil (~0.02): float32 value noise x 1/dx^2
+    at the native grid spacing read -22 for a provably 1-semiconvex fit.
+    OBSERVATION: at sigma=0.25 the inter-mode region is unsampled (p_z density
+    ~1e-8) and the readout's -y^2/2 still supplies the correct curvature -1
+    there -- the class, not the data, carries the unsampled region.
+
+C17 [07-29] AUDIT (user-requested) -- CONJUGATE TRUNCATION BUG, numbers in the
+    task document corrected. psi^*(y) = sup_x{xy - psi(x)} is attained at
+    x* = D^{-1}(y), which leaves any affordable grid: x* ~ 26 at y=6, sigma=0.5
+    and x* ~ 23 at y=3, sigma=1. Both pnpreg/mixture.py and
+    __tasks/semiconvex_check.py computed the sup over a grid bounded at +-14,
+    so f_reg was TRUNCATED (affine, curvature exactly -1) beyond |y| ~ 4
+    (sigma=0.5) / ~2.5 (sigma=1). FIX: exact conjugate via vectorized
+    bisection of D (D_inverse/D_inv), in both files; regression test
+    (test_mixture.py check 8) pins f_reg' = D^{-1}(y) - y beyond the old grid.
+    CORRECTED NUMBERS in task_pnp_registration.tex (Secs 3.1, 3.4, 4, 6.1):
+    min curvature of f_reg -1.0000 -> -0.911 (sigma=.5) / -0.728 (sigma=1);
+    the claim "the last column is exactly -1/t" RETRACTED (the floor is
+    approached, not attained: -3.65 vs -4, -0.73 vs -1);
+    max|f_reg/t - J|/range(J) 30.0%/77.1% -> 20.8%/23.8% -- the dramatic
+    growth with t was mostly artifact; the "grid minimizer off by ~5 cells"
+    observation was ALSO the artifact (now sub-cell; the flat-objective
+    caution is kept on structural grounds). The pnp_reg experiment metrics
+    were NOT affected (their window is interior to the truncation); the
+    figure title was corrected (-1/t is the floor of f_reg/t, not of the
+    plotted f_reg) and the experiment + notebook re-executed (numbers
+    unchanged). The task doc's Exp-1 deliverable paragraph now records the
+    measured certificate/value-error gap (0.9% vs 8.9%) instead of predicting
+    agreement.
+
+C18 [07-29] Experiment 1 rerun at beta=20 (user decision, matching the TV
+    experiment's measured optimum; steps stay at 20000, "increase later").
+    sigma=0.5: rel L2 8.9% -> 1.2%, residual 0.2% -- essentially exact on the
+    sampled range. sigma=0.25: rel L2 24% -> 47% -- WORSE: in the unsampled
+    inter-mode gap the fit is pure inductive bias, and a sharper activation
+    places the gradient transition more arbitrarily, growing the value offset
+    between the two data islands; the residual (0.2%) cannot see it. beta
+    therefore moves the covered and uncovered regimes in OPPOSITE directions;
+    recorded in pnp_reg/DESIGN.md observations. Figure, metrics.json and the
+    executed notebook updated.
+
+C19 [07-29] Experiment 1, UNIFORM-COVERAGE variant (user-requested; N=20000).
+    New sampling option in pnpreg/experiment.py (--sampling uniform): x_k
+    uniform on [-A,A], A = D^{-1}(2.5) -- the manuscript's training-box
+    construction, y = D(x) covers the query window by design. RESULT: recovery
+    essentially exact at both noise levels (rel L2 0.1% at sigma=0.5, 0.04%
+    at sigma=0.25, residuals <= 0.1%), confirming the p_z run's 47% at
+    sigma=0.25 was pure coverage, not optimization (cf. the 5x-steps
+    diagnostic: 47% -> 44%). NEW CAVEAT: the convex control's MEDIAN residual
+    reads 2.2% at sigma=0.5 despite a 108% value error -- the failing region
+    (decreasing target gradient) holds under half the evaluation points, so
+    the median hides it; report a high quantile alongside. Outputs:
+    experiment1_mixture_uniform.{png,pdf}, metrics_uniform.json; observations
+    in pnp_reg/DESIGN.md.
+
+C20 [07-30] EXPERIMENT 2 UNBLOCKED: PIRATE's weights ARE released. Official
+    repo wustl-cig/PIRATE-code (MIT) shallow-cloned VERBATIM at ext/pirate/
+    (commit 4901b71, 2024-03-19); provenance in ext/PROVENANCE.md; h5py
+    installed into lpn_env. Findings vs the task doc's assumptions:
+    (1) ONE denoiser checkpoint (config sigma=1), NOT ten -- the deliverable
+        table shrinks to 2 calibration + 1 PIRATE + 1 PIRATE+ rows; a
+        sigma-ladder needs our own retraining (their script on the released
+        field: measured 4.5 s/step MPS, 29.7 s/step CPU -> ~30 min/sigma on
+        MPS), and such rows must be labeled as OUR retraining.
+    (2) Noise convention: field + sigma^2*randn, i.e. noise STD = sigma^2
+        (= 1 at sigma=1); matters for the identification t*eps = sigma_eff^2.
+        Release field std 1.88 -> t = 1, curvature floor -1, noise ~53% of
+        field scale: information loss is a headline (answers step-1c Q2).
+    (3) Residual net: D(z) = z - dnn(z); probe target grad D = I - grad dnn.
+        DnCNN = 6 convs, 453,059 params, ELU (smooth), no batch norm; field
+        shape (1,3,80,96,112). Forward pass 5.0 s CPU / 1.3 s MPS.
+    (4) PIRATE+ ckpt = the SAME 12 tensors under a PIRATE.dnn. key prefix ->
+        exactly matched differential comparison.
+    (5) tv_pm's posterior-mean denoiser is a Gibbs sampler -- NOT
+        autograd-able; its calibration row needs a differentiable stand-in
+        (n=2 quadrature u_PM, or the tv_pm ICNN prox via implicit
+        differentiation). Choice PENDING, tracked in pnp_reg/DESIGN.md.
+    Task doc sec:exp2 + step 1c updated in place; DnCNN-vs-ICNN training-
+    cost notes in CLAUDE/notes_dncnn_vs_icnn.tex, incl. a RETRACTION: the
+    conversational proposal "psi_theta = q + convex ICNN" is wrong (for
+    convex J, psi - q has Hessian grad prox - I <= 0, i.e. CONCAVE); the
+    quadratic split is clean for G only, where it coincides with the
+    pnp_reg semiconvex readout read in reverse.
+
+C21 [07-30] EXPERIMENT 2 RUN: the PIRATE/PIRATE+ Jacobian diagnosis
+    (task doc 6.2). NEW: pnpreg/probe.py (Hutchinson asymmetry ratio
+    rho = |J-J^T|_F / 2|J|_F with paired-bootstrap SE + identity_max
+    diagnostic; Lanczos on S=(J+J^T)/2, full reorth x2, float64 recurrence,
+    multistart, Ritz residual bounds), pnpreg/probe_targets.py (operators),
+    pnpreg/probe_run.py (gated driver + resume), tests/test_probe.py (16
+    checks) + tests/test_probe_targets.py (22 checks), mixture.dD analytic
+    (checks 9-10 in test_mixture.py), experiment2_probe.ipynb (executed).
+    Tracked outputs: results/probe_metrics.json (+ _smoke, _cpu_check),
+    probe_table.{md,tex}, figs/experiment2_probe.{png,pdf}. Docs: README
+    Experiment-2 section; DESIGN.md design (8 decisions) + observations.
+    CALIBRATION (kill criterion 1): 191/191 gates -- exact mixture row
+    (diag dD, incl. a DESIGNED cond-3 violation, dD(0,.5)=11.28), exact
+    n=2 quadrature u_PM (all conds by theorem), tv_pm ICNN prox via
+    CG-vs-dense two-path (float64 3e-13, float32 4.5e-7), symmetric
+    surrogate floor row (rho = 0.0 exactly; effective floor 1.1e-8).
+    METHOD FINDING: a two-path autodiff floor is IMPOSSIBLE for conv nets
+    -- forward-mode, reverse-over-reverse, reverse-over-forward agree
+    BITWISE (AD transposes conv kernels exactly); floor = symmetric-by-
+    weight surrogate + bilinear identity_max instead.
+    RESULT (8 test points/net, field + N(0,I), probes 16, k 30, starts 2):
+      PIRATE  (AWGN denoiser): rho 0.4440-0.4443 (SE 1e-4, floor 1.1e-8),
+        lmin(S) -0.72, lmax(S) 1.14; conds 1,2,3 ALL FAIL at 100% of pts.
+        The trained DnCNN is the gradient of NOTHING: the objective the
+        PIRATE paper writes down does not exist for its own denoiser.
+        (This tests existence (Poincare) -- NOT a convexity claim; their
+        paper never asserts convexity, and condition 3 is measured only to
+        classify which recovery class applies.)
+      PIRATE+ (DEQ fine-tuned, same 12 tensors): rho 0.0156 (28x smaller,
+        still >> floor), lmin 0.946 >= 0 (cond 2 PASSES), lmax 1.053
+        (cond 3 fails by 5%); spec(S) in [0.95, 1.05] -- a near-identity
+        map. REVERSES the task doc's differential hypothesis: fine-tuning
+        moved the denoiser TOWARD the proximal class, into the semiconvex
+        (nonconvex-regularizer) regime our parametrization targets.
+    Cross-device: CPU check agrees in rho to 1e-4 / 1e-5 on bitwise-
+    identical inputs. Ops note: two jetsam kills on the 16 GB machine
+    until torch.mps.empty_cache() between points (MPS allocator grows ~2
+    GB/pt); per-point resume files (.probe_partial_*) now persist. ~500 s
+    per full-field point (n = 2.6e6) on MPS; production total ~2.5 h.
+
+C22 [07-30] EXPERIMENT 3.1: PIRATE+ IS AFFINE; its implicit regularizer in
+    closed form. NEW: pnpreg/affine.py (affinity metric, closed-form
+    quadratic grad f_reg(y) = S^{-1}(y-b) - y via CG on the matrix-free
+    symmetric part, residual-relative asymmetry rho_res), pnpreg/
+    affine_run.py (CPU-ONLY driver), tests/test_affine.py (9 checks);
+    probe.lanczos_symmetric gained return_ritz (extreme Ritz vectors;
+    test_probe.py checks 8). Outputs: results/affine_metrics.json,
+    figs/experiment31_affine.{png,pdf}.
+    RESULTS (full field, 8 points, 12 pairs):
+      * PIRATE+ affine to 0.20% on its operating distribution (Jacobian
+        variation 0.8%; float64 crop repeat 0.11%). The quadratic account
+        passes its falsifiable prediction: held-out prox-identity resid
+        0.597 vs predicted 0.704. f_reg curvatures [-0.0503, +0.0574].
+        Since cond 3 fails (negative curvature directions), NO proper
+        Gaussian prior generates this denoiser: the implicit prior is an
+        IMPROPER quadratic.
+      * NORMALIZATION FINDING (revises how Exp 2's rho is read): the
+        regularizer's gradient is the RESIDUAL z - D(z), and its
+        asymmetry in its own units is rho_res = |K|_F/(2|I-A|_F) = 0.702
+        for PIRATE+ (vs rho_full 0.0156; norm ratio 0.022). The skew is
+        the irreducible ceiling for ANY recovery; the closed form attains
+        it. For AWGN: rho_res 0.098 (residual 4.5x larger than the map),
+        but S indefinite, so no proximal reading regardless.
+      * AWGN denoiser NOT affine: pair err 0.50, Jacobian varies 93%
+        between points -- spectrum stability does NOT imply constant
+        Jacobian.
+      * CONSEQUENCES: full nonparametric recovery (note sec 6) SUPERSEDED
+        for PIRATE+ (no non-quadratic signal above 0.2%; ceiling already
+        attained); plug-back becomes a linear solve; nonparametric fit
+        remains motivated for the AWGN surrogate question + Route B. HJ:
+        quadratics are closed under the viscous semigroup, so the whole
+        sigma-family follows from the measured S analytically.
+    OPS (user directive): code is CPU-only -- two MPS attempts hit ~15 GB
+    and 13.35 GB on the 16 GB machine (caching-allocator retention; then
+    a full-field float64 CPU stage); float64 precision repeats run on
+    CROPS. Production 78 min CPU, peak ~2.5 GB.
+
+C23 [07-31] EXPERIMENT 3.2: the backward viscosity solution recovered by
+    our network on an exactly solvable bimodal field prior (Route B).
+    NEW: pnpreg/bimodal.py (n=64 model: u = Gaussian bump direction with
+    the Exp-1 mixture ±2/nu=0.05 -> J NONCONVEX along u; 63 perp modes
+    Gaussian, lambda_k = 4/k^2; exact D, psi, f_reg = t*J_BVS factorized),
+    pnpreg/bimodal_run.py (driver), tests/test_bimodal.py (12 gates, all
+    float64 closed-form checks). ANNEALING/SEMIGROUP TESTING DROPPED
+    (user decision): recovery + convex control only.
+    RESULT (sigma=0.5, t=0.25, 50k steps, N=40k, seeds 1/2/3):
+      fit (a) semiconvex readout J_theta = G_theta - q: rel L2 3.20%
+        (centered values, held-out operating support), u-slice min curv
+        -0.883 vs exact -0.911 (floor -1) -- the nonconvex dip recovered;
+        perp spectrum (t/lambda_k over 4 orders of magnitude) 0.32%
+        aggregate / 3.1% worst mode; resid med 2.5% / q95 4.1%.
+      fit (b) convex control: 15.4% overall, min curv 0.000 (a convex fit
+        bridges the dip flat -- the forced failure), perp spectrum 1.13%
+        aggregate / 4.2% worst mode;
+        resid med 4.5% / q95 16.5% (median hides the localized failure,
+        the Exp-1 lesson again).
+    READ: the class separation is 5x in value error and categorical in
+    curvature, on the same data/architecture/budget: the backward
+    solution of a nonconvex prior is representable in the semiconvex
+    class and NOT in the convex class. On the convex block J_BVS = J
+    exactly (no information loss) and both fits agree sub-1% -- the
+    no-loss identity measured. Fig figs/experiment32_bimodal.{png,pdf};
+    metrics results/bimodal_metrics.json; ckpts results/ckpt/bimodal_*
+    (gitignored). ALSO [07-31]: __notes revised (display-math identity
+    chains, eq:charprox equivalence, precise proximal-shadow definition,
+    variational f_reg-without-a-prior paragraph for PIRATE+ in both docs;
+    banned-word sweep: honest/genuine/caveat removed repo-docs-wide).
+    Economy budget (50k steps, beta 20) recorded as protocol deviation.
+    SPECTRUM INSTRUMENT CORRECTED same day (supersedes the run log's 0.40%
+    Hessian aggregate): pointwise Hessians are noise at soft modes (k=1
+    read -0.009 for exact 0.0625 -- a log plot drops the negative point),
+    value slices are below float32 noise at stiff modes, origin-anchored
+    slices read the unsampled inter-mode gap (5.6%, off-support). Final
+    readout: gradient-slice slopes over each mode's operating range,
+    anchored at held-out points (bimodal_run.spectrum_by_slices);
+    --rescore recomputes metrics + figure from checkpoints in seconds.
+
+C24 [07-31] SHADOW vs INVERSE DESIGN, checked against Esteve-Zuazua
+    (SIAM JMA 2020, papers/2020_zuazua_inverseHJ.pdf; script
+    __notes/shadow_vs_inverse_design_check.py; note sec 5 move 4).
+    EXACT identifications: (1) their reachability criterion (Thm 2.2,
+    quadratic H) = psi convex = the proximal condition -- the reachable
+    set of the inviscid HJ flow IS the prox class, so the Exp-2 probe is
+    a reachability test. (2) Their projection of an unreachable target
+    (Thm 2.10, backward-forward = semiconcave envelope = obstacle
+    problem) = q - psi** in our variables; operator level: grad psi**,
+    conjugate grad psi*; mu-free. (3) MEASURED (1-D, isotonic regression
+    = the exact 1-D shadow): shadow == ES projection to sampling
+    precision OFF the fold region for uniform AND skewed mu; they differ
+    at O(1) ON the fold (jump vs mu-averaged branches; sup gap 0.81/1.06).
+    Shadow is NOT the ES projection but coincides off the nonconvexity;
+    "shadow solves a mu-weighted obstacle problem" left as a question.
+
 ################################################################
 # 5. SUPERSEDED NUMBERS -- DO NOT CITE
 ################################################################

@@ -36,7 +36,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 from . import dataset
-from .icnn import ConvICNN
+from src.conv_icnn import ConvICNN
 from .paths import FIGS as OUT, IMAGES
 from .sampler import from_sigma_t, sample_pm
 from src.network import LPN            # noqa: E402  (paths.py puts ROOT on sys.path)

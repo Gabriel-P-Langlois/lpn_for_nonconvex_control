@@ -208,7 +208,7 @@ TV itself.
 **Convexity.** By Amos et al. (2017, Prop. 1), a feed-forward network is convex
 in its input if the feature-path weights are nonnegative and the activations
 are convex and non-decreasing; a convolution is linear, so the proposition
-applies to the kernel entries (as in Mukherjee et al. 2020). In `tvpm/icnn.py`,
+applies to the kernel entries (as in Mukherjee et al. 2020). In `../src/conv_icnn.py`,
 the input and skip convolutions are unconstrained (affine in `y`); the feature
 convolutions and the pooling head are kept nonnegative by `wclip` at each step;
 the activation is Softplus. `tests/test_icnn.py` is the gate — midpoint

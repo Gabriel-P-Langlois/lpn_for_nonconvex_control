@@ -1,0 +1,221 @@
+{
+ "config": {
+  "date": "2026-07-30T19:44:19",
+  "torch": "2.8.0",
+  "device": "cpu",
+  "crop": [
+   24,
+   24,
+   24
+  ],
+  "n_points": 3,
+  "n_pairs": 3,
+  "k": 6,
+  "seed": 14,
+  "seed_heldout": 114,
+  "rho_exp2": {
+   "pirate": 0.4441368637896994,
+   "pirate_plus": 0.015554274829673276
+  }
+ },
+ "nets": {
+  "pirate": {
+   "affinity": {
+    "pairs": [
+     [
+      0,
+      1
+     ],
+     [
+      0,
+      2
+     ],
+     [
+      1,
+      2
+     ]
+    ],
+    "err": [
+     0.2671319176912451,
+     0.2733974044426472,
+     0.26976307438401553
+    ],
+    "err_max": 0.2733974044426472,
+    "err_median": 0.26976307438401553,
+    "jac_variation": [
+     0.6866550170027471,
+     0.6994437391666346
+    ],
+    "b_norm": 49.62178001627484,
+    "b_spread": 0.6099586233277464,
+    "D_scale": 471.0222885720382,
+    "which": "pirate",
+    "n_points": 3,
+    "device": "cpu",
+    "dtype": "torch.float32",
+    "seed": 14,
+    "crop": [
+     24,
+     24,
+     24
+    ]
+   },
+   "affinity_float64": {
+    "pairs": [
+     [
+      0,
+      1
+     ]
+    ],
+    "err": [
+     0.2671321064699147
+    ],
+    "err_max": 0.2671321064699147,
+    "err_median": 0.2671321064699147,
+    "jac_variation": [
+     0.6866550604570637
+    ],
+    "b_norm": 49.62176908922534,
+    "b_spread": 0.599946769421479,
+    "D_scale": 471.27467247773546,
+    "which": "pirate",
+    "n_points": 2,
+    "device": "cpu",
+    "dtype": "torch.float64",
+    "seed": 14,
+    "crop": [
+     24,
+     24,
+     24
+    ]
+   },
+   "selfcheck": {
+    "which": "pirate",
+    "seed": 114,
+    "resid": 2.6960127882165743,
+    "target_scale_rel": 0.5047808833176659,
+    "cg_iters": 30,
+    "cg_resid": 0.18218043320164048,
+    "rho_res": 0.06634288692448484,
+    "rho_res_se": 0.00016981732239807707,
+    "rho_full": 0.3930481378689021,
+    "norm_ratio_res_over_full": 5.924495542699942
+   },
+   "selfcheck_prediction": 0.33610596130850035,
+   "selfcheck_verdict": true,
+   "ritz": {
+    "lmin": {
+     "lambda_S": -0.4223561959733943,
+     "curvature_freg": -3.3676697762070797
+    },
+    "lmax": {
+     "lambda_S": 0.9620300415522466,
+     "curvature_freg": 0.0394685787426019
+    }
+   },
+   "ritz_res": {
+    "lmin": 0.13443014977684756,
+    "lmax": 0.12406967850404675
+   }
+  },
+  "pirate_plus": {
+   "affinity": {
+    "pairs": [
+     [
+      0,
+      1
+     ],
+     [
+      0,
+      2
+     ],
+     [
+      1,
+      2
+     ]
+    ],
+    "err": [
+     0.0010922003214256953,
+     0.0011156329709752714,
+     0.0011123105667923275
+    ],
+    "err_max": 0.0011156329709752714,
+    "err_median": 0.0011123105667923275,
+    "jac_variation": [
+     0.00541852000468011,
+     0.005527013482089677
+    ],
+    "b_norm": 4.885957389338305,
+    "b_spread": 0.3007878972871952,
+    "D_scale": 611.4848677837332,
+    "which": "pirate_plus",
+    "n_points": 3,
+    "device": "cpu",
+    "dtype": "torch.float32",
+    "seed": 14,
+    "crop": [
+     24,
+     24,
+     24
+    ]
+   },
+   "affinity_float64": {
+    "pairs": [
+     [
+      0,
+      1
+     ]
+    ],
+    "err": [
+     0.0010922006098573332
+    ],
+    "err_max": 0.0010922006098573332,
+    "err_median": 0.0010922006098573332,
+    "jac_variation": [
+     0.005418520109545824
+    ],
+    "b_norm": 4.8859573431006345,
+    "b_spread": 0.2955777252621666,
+    "D_scale": 610.8619222875385,
+    "which": "pirate_plus",
+    "n_points": 2,
+    "device": "cpu",
+    "dtype": "torch.float64",
+    "seed": 14,
+    "crop": [
+     24,
+     24,
+     24
+    ]
+   },
+   "selfcheck": {
+    "which": "pirate_plus",
+    "seed": 114,
+    "resid": 0.5496796990583246,
+    "target_scale_rel": 0.017681146938354698,
+    "cg_iters": 5,
+    "cg_resid": 7.566840403575092e-10,
+    "rho_res": 0.7038391900619028,
+    "rho_res_se": 0.0012298877887501202,
+    "rho_full": 0.011985893576202743,
+    "norm_ratio_res_over_full": 0.01702930690070808
+   },
+   "selfcheck_prediction": 0.704951500628695,
+   "selfcheck_verdict": true,
+   "ritz": {
+    "lmin": {
+     "lambda_S": 0.9687537343581633,
+     "curvature_freg": 0.03225408536106289
+    },
+    "lmax": {
+     "lambda_S": 1.0324048365286216,
+     "curvature_freg": -0.03138772251162658
+    }
+   },
+   "ritz_res": {
+    "lmin": 0.007583143386984481,
+    "lmax": 0.006797604031557732
+   }
+  }
+ }
+}

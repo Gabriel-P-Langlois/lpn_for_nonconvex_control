@@ -1,4 +1,8 @@
-"""Convolutional input-convex neural network (conv-ICNN) for the TV example.
+"""Convolutional input-convex neural network (conv-ICNN).
+
+Moved verbatim from ``tv_pm/tvpm/icnn.py`` on 2026-07-29 (changes.txt C16);
+built for the TV posterior-mean example and shared here because locality plus
+shift-invariance is a property of any image prior, not of that experiment.
 
 WHY THIS EXISTS. The fully-connected ICNN (`src/network.py:LPN`) recovers the TV
 denoiser's f_reg to a ~10.7% held-out prox residual and stalls there: width
@@ -57,13 +61,13 @@ CONVEXITY -- the whole point, so state it exactly.
   the non-wrapping TV boundary (see `pad`), NOT for convexity.
 
 The guarantee holds only if the constraints hold in CODE, so it is a claim to be
-TESTED, not trusted: `tests/test_icnn.py` checks the midpoint inequality, the
+TESTED, not trusted: `tv_pm/tests/test_icnn.py` checks the midpoint inequality, the
 Hessian's positive-semidefiniteness, and that wclip actually clamps -- and checks
 that convexity FAILS without wclip, so the test has teeth.
 
 INTERFACE. Presents the same surface as LPN -- `scalar(x)` mapping a FLAT (N, HW)
-batch to (N, 1), and `wclip()` -- so `recover.py`'s train_grad, net_grad,
-net_value and score run UNCHANGED. It reshapes to (N, 1, H, W) internally.
+batch to (N, 1), and `wclip()` -- so `src/gradfit.py`'s train_grad, net_grad and
+net_value run UNCHANGED. It reshapes to (N, 1, H, W) internally.
 """
 import torch
 import torch.nn as nn

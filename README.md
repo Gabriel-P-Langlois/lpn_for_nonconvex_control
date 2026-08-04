@@ -35,8 +35,10 @@ that either route dominates the other.
 ```
 src/            single source of truth
   network.py      the Softplus ICNN (one network, used for both ψ and G)
+  conv_icnn.py    the convolutional ICNN (locality + shift invariance)
   targets.py      exact S, J, ψ, and the preimage map, per family
   train.py        mini-batch MSE training, step-based budget
+  gradfit.py      gradient-supervised training (train_grad) + Units
   recovery.py     both routes + the shared certificates
   invert.py       the convex inverter (Route 1)
   plotting.py     cross-sections
@@ -51,6 +53,7 @@ bin/            thin configurations; the mathematics lives in src/
 
 notebooks/      the paper's experiments, one executed notebook per family
 tv_pm/          the TV posterior-mean (imaging) experiment; its own README
+pnp_reg/        the plug-and-play registration experiments; its own README
 tests/          regression tests for the targets and the pipeline
 ext/            the upstream LPN repository, verbatim, + PROVENANCE.md + its license
 legacy/         old_notebooks/ (the original notebooks, superseded) + slurm/

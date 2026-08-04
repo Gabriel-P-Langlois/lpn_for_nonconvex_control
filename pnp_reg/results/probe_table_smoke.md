@@ -1,0 +1,8 @@
+| row | pts | rho (mean [min,max] ± SE) | lambda_min(S) | lambda_max(S) | cond2 viol frac(max) | cond3 viol frac(max) |
+|---|---|---|---|---|---|---|
+| CAL mixture (exact, d=64) | 2 | 0 [0, 0] ± 0 | 0.1667 | 11.2778 | 0.00 (0) | 0.50 (10.3) |
+| floor: symmetric surrogate | 1 | 0 [0, 0] ± 0 | -- | -- | -- | -- |
+| PIRATE (sigma=1) | 1 | 0.389 [0.389, 0.389] ± 0.001 | -0.4397 | 0.9247 | 1.00 (0.44) | 0.00 (0) |
+| PIRATE+ | 1 | 0.0121 [0.0121, 0.0121] ± 1e-05 | 0.9684 | 1.0326 | 0.00 (0) | 1.00 (0.0326) |
+
+asymmetry floor: 1.899e-08

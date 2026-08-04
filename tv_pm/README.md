@@ -15,7 +15,7 @@ Numbers and figures are in `results/`.
 |---|---|
 | **`recover_tv.ipynb`** | the experiment: data → model → score → figures → denoising → cost |
 | `DESIGN.md` | the experimental design |
-| `tvpm/` | the code: `sampler.py` (MCMC `u_PM`), `quadrature.py` (exact `n=2` reference), `dataset.py` (data), `recover.py` (train + score), `icnn.py` (convolutional ICNN), `figures.py`, `denoise.py`, `paths.py` |
+| `tvpm/` | the code: `sampler.py` (MCMC `u_PM`), `quadrature.py` (exact `n=2` reference), `dataset.py` (data), `recover.py` (train + score), `figures.py`, `denoise.py`, `paths.py`. The training loop and the ICNNs live in `../src/` (`gradfit.py`, `network.py`, `conv_icnn.py`) |
 | `tests/` | gates; run them before trusting a result |
 | `images/` | the two source images (`.mat`), tracked so the repository is self-contained |
 | `data/` | cached sampler output (gitignored, regenerable) |
