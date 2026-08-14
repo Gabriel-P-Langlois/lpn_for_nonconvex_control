@@ -1,0 +1,4 @@
+recovered prior,resid_rel_median_pct,resid_rel_p90_pct,ratio_to_delta,cost
+LPN (Fang et al.)  [tripwire],11.791207149858588,376.56789361612397,5.384110784978134,3.2 s (inversion)
+LPN (Ours),13.73492578887176,97.7644647918376,6.27165320148121,0.01 s (fwd)
+Direct (Ours),8.071239941064995,21.190625465995854,3.685496273836177,0.03 s (fwd)

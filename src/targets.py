@@ -42,12 +42,12 @@ class Problem:
                                query box [-a,a]^d.
 
     Why the training box is not the query box (D2 amendment, 2026-07-09).
-    Route 1 evaluates psi_theta at y = (grad psi)^{-1}(x); Route 2 trains G at
+    LPN Iterative recovery evaluates psi_theta at y = (grad psi)^{-1}(x); One-shot recovery trains G at
     inputs y_k = grad psi(x_k), so G's support is range(grad psi) restricted to
-    the training box. BOTH routes therefore need the training box chosen so that
+    the training box. BOTH recoveries therefore need the training box chosen so that
     grad psi maps it ONTO the query box. Sampling psi on the query box itself
     silently starves both networks near the boundary: measured in 2D on
-    QuadraticL1, Route-1 RMSE 4.745 and Route-2 RMSE 0.337, versus 0.034 and
+    QuadraticL1, iterative-recovery RMSE 4.745 and one-shot-recovery RMSE 0.337, versus 0.034 and
     0.059 once the box is enlarged. Since preimage is componentwise monotone
     (grad psi is monotone, psi convex) the max over the box is attained at a
     corner, so each bound below is analytic.
@@ -138,7 +138,7 @@ class NegL1(Problem):
         is soft-thresholding. CONTRACTS: this family needs no enlarged box.
 
         Caveat: grad psi omits the open gap (-1,1) per coordinate (psi is
-        nonsmooth at 0), so the Route-2 samples y_k have an interior HOLE
+        nonsmooth at 0), so the one-shot-recovery samples y_k have an interior HOLE
         around the origin rather than a boundary deficit. Logged as a
         follow-up; it is not fixed by the box margin.
         """
@@ -313,7 +313,7 @@ class PosteriorMeanL1(Problem):
 
         psi^*(x) = <y, x> - psi(y) at y = preimage(x), exact because
         grad psi(y) = x attains the sup defining the conjugate. This is the same
-        identity `src.recovery.conjugate_samples` uses to build the Route-2
+        identity `src.recovery.conjugate_samples` uses to build the one-shot-recovery
         targets, evaluated here on the TRUE psi instead of a learned one.
         """
         x = np.asarray(x, dtype=float)

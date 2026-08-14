@@ -35,6 +35,9 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
+from src.plotstyle import apply as _apply_style
+_apply_style()          # one font size for every figure
+
 from . import dataset
 from src.conv_icnn import ConvICNN
 from .paths import FIGS as OUT, IMAGES
@@ -180,13 +183,13 @@ def run(image="cameraman_256x256_d", arch="fc", sigma=dataset.SIGMA,
         vm = dict(vmin=0, vmax=1) if cm == "gray" else dict(vmin=0, vmax=0.1)
         h = a.imshow(im, cmap=cm, **vm)
         a.set_xticks([]); a.set_yticks([])
-        a.set_title(title + (f"\n{sub} (vs clean)" if sub else ""), fontsize=9)
+        a.set_title(title + (f"\n{sub} (vs clean)" if sub else ""))
         if cm != "gray":
             fig.colorbar(h, ax=a, fraction=0.046, pad=0.04)
     cfg = f"  [PM_SWEEPS={sweeps}" + (f", FIT_STEPS={steps}" if steps is not None else "") + "]"
     fig.suptitle(f"Denoising with the RECOVERED prior vs the true posterior-mean "
                  f"denoiser  —  $\\hat u$ vs $u_{{PM}}$: PSNR {p_match:.1f} dB, "
-                 f"SSIM {s_match:.4f}, rel-L2 {100*r_match:.1f}%{cfg}", fontsize=12)
+                 f"SSIM {s_match:.4f}, rel-L2 {100*r_match:.1f}%{cfg}")
     fig.tight_layout(rect=[0, 0, 1, 0.94])
     os.makedirs(OUT, exist_ok=True)
     stem = f"denoise_{arch}_{image.split('_')[0]}{dataset.tag(sigma, t)}"

@@ -12,21 +12,21 @@ predate the protocol in the audit should not be cited.
 
 ---
 
-## The two routes
+## The two recoveries
 
 We learn a convex potential ψ(y) = ½‖y‖² − S(y,1) = (J + ½‖·‖²)\*(y), so that
 ∇ψ = prox_J. From ψ we recover the prior J in two ways:
 
 | | method | cost | parameters |
 |---|---|---|---|
-| **Route 1** (baseline) | invert ∇ψ(y) = x per query, then J(x) = ⟨x,y⟩ − ψ(y) − ½‖x‖² | one optimization problem per query | α (a regularization weight that biases the recovered prior at order α) |
-| **Route 2** (ours) | fit a second network G ≈ ψ\*, then J(x) = G(x) − ½‖x‖² | one forward pass | none |
+| **LPN Iterative recovery** (baseline) | invert ∇ψ(y) = x per query, then J(x) = ⟨x,y⟩ − ψ(y) − ½‖x‖² | one optimization problem per query | α (a regularization weight that biases the recovered prior at order α) |
+| **One-shot recovery** (ours) | fit a second network G ≈ ψ\*, then J(x) = G(x) − ½‖x‖² | one forward pass | none |
 
-Route 1 is Algorithm 2 of Fang et al. Under a symmetric protocol the two routes
-are comparable: in the most recent sweep, Route 1 attained the lower error in 7
-of 12 configurations. We therefore claim that Route 2 matches a fully tuned
+LPN Iterative recovery is Algorithm 2 of Fang et al. Under a symmetric protocol the two recoveries
+are comparable: in the most recent sweep, LPN Iterative recovery attained the lower error in 7
+of 12 configurations. We therefore claim that One-shot recovery matches a fully tuned
 inversion baseline while requiring no per-query optimization; we do not claim
-that either route dominates the other.
+that either recovery dominates the other.
 
 ---
 
@@ -39,13 +39,13 @@ src/            single source of truth
   targets.py      exact S, J, ψ, and the preimage map, per family
   train.py        mini-batch MSE training, step-based budget
   gradfit.py      gradient-supervised training (train_grad) + Units
-  recovery.py     both routes + the shared certificates
-  invert.py       the convex inverter (Route 1)
+  recovery.py     both recoveries + the shared certificates
+  invert.py       the convex inverter (LPN Iterative recovery)
   plotting.py     cross-sections
   diagnostics.py  in-distribution figures (see below)
 
 bin/            thin configurations; the mathematics lives in src/
-  _run.py         the pipeline: data → ψ → G → both routes → figures
+  _run.py         the pipeline: data → ψ → G → both recoveries → figures
   quadratic_l1.py  negl1.py  concave_quad.py  minplus.py    (--dim d)
   run_all.py      sweep driver → logs/summary.csv
   plot.py         regenerate figures from a checkpoint, without retraining
@@ -115,17 +115,17 @@ This produces, for any family and dimension:
 - **predicted vs. true** — Ĵ(x) against J(x) over the test set, one panel per
   route; independent of any choice of slice.
 - **prox scatter** — the learned ∇ψ against the exact prox_J. This diagnoses
-  the first network, which both routes share: Route 1 inverts it and Route 2 is
+  the first network, which both recoveries share: LPN Iterative recovery inverts it and One-shot recovery is
   fitted to its image, so its error bounds both.
 - **preimage scatter** — ∇G(x) against the analytic preimage y\*(x). This
-  checks Route 2's defining identity, ∇G = (∇ψ)⁻¹, directly.
+  checks the one-shot recovery's defining identity, ∇G = (∇ψ)⁻¹, directly.
 
 ## Experimental protocol
 
 - **Training box.** ψ is trained on [−A,A]^d, where A is the smallest
   half-width such that ∇ψ maps the training box onto the query box [−4,4]^d;
-  `problem.train_halfwidth(a)` computes A for each family. Both routes require
-  this: Route 1 evaluates ψ at preimages that leave the query box, and Route 2
+  `problem.train_halfwidth(a)` computes A for each family. Both recoveries require
+  this: LPN Iterative recovery evaluates ψ at preimages that leave the query box, and One-shot recovery
   trains G at inputs that lie strictly inside it. All errors are reported on
   the query box.
 - **Training budget.** The budget is S = 250 000 optimizer steps with
@@ -138,7 +138,7 @@ This produces, for any family and dimension:
 - **No early stopping.** The networks under-fit rather than overfit, and early
   stopping truncated training on validation noise. The checkpoint with the
   best validation error is kept instead.
-- **Route 1 reporting.** Route 1 is reported at the better of α ∈ {0, 0.1},
+- **LPN Iterative recovery reporting.** LPN Iterative recovery is reported at the better of α ∈ {0, 0.1},
   with diverged solves excluded. A zero prox residual does not certify
   convergence, since ∇ψ(y) → x along a diverging minimizing sequence.
 - **Error metric.** Absolute RMSE is not comparable across dimensions, because

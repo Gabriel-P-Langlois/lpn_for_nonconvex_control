@@ -1,5 +1,5 @@
 """Shared experiment runner. One file per FAMILY in bin/ supplies a config and
-calls ``cli``; the whole pipeline (data, both networks, both recovery routes,
+calls ``cli``; the whole pipeline (data, both networks, both recovery methods,
 plot) lives here so each bug is fixed once. Dimension is a flag, not a file:
 the only dimension-dependent choice is the width, and hidden_width(dim) owns it.
 """
@@ -44,10 +44,10 @@ def run(
     lr=1e-3,
     batch_size=512,
     invert_iters=20000,
-    # Fang et al.'s strong-convexity regularizer. Route 1 is run at each value and
+    # Fang et al.'s strong-convexity regularizer. LPN Iterative recovery is run at each value and
     # its BEST RMSE is reported (see below). alpha=0 is the unregularized method.
     alphas=(0.0, 0.1),
-    n_eval=1000,  # prior-recovery points, SHARED by both routes (None = all of x_te)
+    n_eval=1000,  # prior-recovery points, SHARED by both recoveries (None = all of x_te)
     smoke=False,
     out_dir=None,
 ):
@@ -68,8 +68,8 @@ def run(
 
     # --- boxes (D2 amendment, 2026-07-09) ---
     # psi is TRAINED on [-train_a, train_a]^d, chosen so that grad psi maps it
-    # onto the query box [-a, a]^d. Both routes need this: Route 1 evaluates psi
-    # at preimages y* (which can leave the query box), and Route 2 trains G at
+    # onto the query box [-a, a]^d. Both recoveries need this: LPN Iterative recovery evaluates psi
+    # at preimages y* (which can leave the query box), and One-shot recovery trains G at
     # inputs y_k = grad psi(x_k), whose support is range(grad psi). Queries and
     # all reported errors stay on [-a, a]^d.
     train_a = problem.train_halfwidth(a)
@@ -90,8 +90,8 @@ def run(
         model, x_tr, psi_tr, x_va, psi_va, batch_size=batch_size, steps=steps, lr=lr
     )
 
-    # --- second network: Route-2 conjugate G ---
-    print(f"[{name}] training G network (Route 2)")
+    # --- second network: one-shot-recovery conjugate G ---
+    print(f"[{name}] training G network (One-shot recovery)")
     yk_tr, Gk_tr = conjugate_samples(x_tr, model)
     yk_va, Gk_va = conjugate_samples(x_va, model)
     model_G = LPN(in_dim=dim, hidden=hidden, layers=layers, beta=beta).to(device)
@@ -99,32 +99,32 @@ def run(
         model_G, yk_tr, Gk_tr, yk_va, Gk_va, batch_size=batch_size, steps=steps, lr=lr
     )
 
-    # --- Route-2 coverage: does G's training support contain the query box? ---
-    # y_k are G's inputs; if the queries reach past them, Route 2 extrapolates.
+    # --- one-shot-recovery coverage: does G's training support contain the query box? ---
+    # y_k are G's inputs; if the queries reach past them, One-shot recovery extrapolates.
     yk_reach = float(np.max(np.abs(yk_tr)))
     frac_q_uncovered = float(np.mean(np.max(np.abs(x_te), axis=1) > yk_reach))
 
     # --- recovery on the held-out test set: SAME points, SAME certificates ---
-    # Route 1 runs exactly as Fang et al. specify (alpha its only knob, no box,
-    # no projection, no abstention). Route 2's implied preimage is grad G(x),
+    # LPN Iterative recovery runs exactly as Fang et al. specify (alpha its only knob, no box,
+    # no projection, no abstention). the one-shot recovery's implied preimage is grad G(x),
     # free, because G ~= psi*. Both are then judged by the same prox residual
     # and Fenchel-Young gap, neither of which touches the ground truth.
-    # One evaluation set for BOTH routes. Route 1 costs an optimization per
-    # query, Route 2 a forward pass; that asymmetry is the method's, not the
+    # One evaluation set for BOTH recoveries. LPN Iterative recovery costs an optimization per
+    # query, One-shot recovery a forward pass; that asymmetry is the method's, not the
     # protocol's, so we do not compensate for it -- we just measure both on the
     # same points. 1000 is ample for an RMSE at these error magnitudes.
     xs = x_te if n_eval is None else x_te[:n_eval]
     true_s = problem.prior_true(xs)
 
-    # Route 1 is run at EVERY alpha in `alphas` and we report the best result
+    # LPN Iterative recovery is run at EVERY alpha in `alphas` and we report the best result
     # among the runs that did NOT diverge. This is deliberately generous to
-    # Route 1: alpha = 0 is the unregularized inversion, whose objective is
+    # LPN Iterative recovery: alpha = 0 is the unregularized inversion, whose objective is
     # coercive only where x lies in range(grad psi_theta) -- true once psi_theta
     # has converged, false when it is under-trained, in which case the iterate
     # runs away and the "error" is a readout of invert_iters. alpha > 0 makes the
     # objective strongly convex so a minimizer always exists, at the price of an
     # O(alpha) bias, since grad psi(y) = x - alpha*y at the solution.
-    # Route 2 has no alpha and is untouched, so this doubles only Route 1's cost.
+    # One-shot recovery has no alpha and is untouched, so this doubles only the iterative recovery's cost.
     per_alpha = {}
     for al in alphas:
         r1_a, y1_a = recover_prior_route1(
@@ -178,16 +178,16 @@ def run(
         # weights, so the last epoch's val MSE describes a discarded model.
         "psi_val_mse": hist_psi["best_val"],
         "G_val_mse": hist_G["best_val"],
-        # unconditional RMSE, all queries, both routes. None when every Route-1
+        # unconditional RMSE, all queries, both recoveries. None when every iterative-recovery
         # solve diverged: there is no trustworthy number to report.
         "prior_rmse_route1": None if all_diverged else rep1["rmse"],
         "prior_rmse_route2": rep2["rmse"],
-        # How far the reported Route-1 solve pushed psi_theta past the exact
+        # How far the reported iterative-recovery solve pushed psi_theta past the exact
         # preimage bound. >1 means psi was extrapolated at some query, which is
         # not divergence but is worth knowing; the tripwire only fires at 1.5.
         "route1_preimage_excess": rep1["max_preimage_linf"] / pre_bound,
         "route2_preimage_excess": rep2["max_preimage_linf"] / pre_bound,
-        # the same certificate for each route
+        # the same certificate for each recovery
         "route1_median_prox_residual": rep1["median_prox_residual"],
         "route2_median_prox_residual": rep2["median_prox_residual"],
         "route1_median_fy_gap": rep1["median_fy_gap"],
@@ -202,13 +202,13 @@ def run(
     if frac_q_uncovered > 0.01:
         print(f"[{name}] WARNING: {frac_q_uncovered:.1%} of queries lie outside "
               f"G's training support (max|y_k|_inf = {yk_reach:.2f} < a = {a:g}); "
-              f"Route-2 error will be dominated by extrapolation.")
+              f"one-shot-recovery error will be dominated by extrapolation.")
     if all_diverged:
         print(f"[{name}] WARNING: every alpha diverged; prior_rmse_route1 = None.")
     elif metrics["route1_preimage_excess"] > 1.0:
         # Only meaningful for a solve that did NOT trip the wire: psi_theta is
         # being evaluated past the exact preimage bound, but by less than 1.5x.
-        print(f"[{name}] NOTE: Route-1 preimage reaches |y|_inf = "
+        print(f"[{name}] NOTE: iterative-recovery preimage reaches |y|_inf = "
               f"{rep1['max_preimage_linf']:.2f} vs the exact bound {pre_bound:g} "
               f"({metrics['route1_preimage_excess']:.2f}x); psi_theta is "
               f"extrapolated at some query. Not divergence (tripwire is 1.5x).")
@@ -243,8 +243,8 @@ def run(
     per_a = "  ".join(f"a={a_:g}: {r['rmse']:.4f}{'*' if a_ == alpha_best else ''}"
                       f"{' DIVERGED' if diverged[a_] else ''}"
                       for a_, r in per_alpha.items())
-    tail = " (ALL DIVERGED -- Route-1 number is NOT trustworthy)" if all_diverged else ""
-    print(f"[{name}] Route-1 by alpha ({per_a})  -> reporting alpha={alpha_best:g}{tail}")
+    tail = " (ALL DIVERGED -- iterative-recovery number is NOT trustworthy)" if all_diverged else ""
+    print(f"[{name}] iterative-recovery by alpha ({per_a})  -> reporting alpha={alpha_best:g}{tail}")
     # JSON keys must be strings; alpha-keyed dicts and numpy scalars need care.
     def _jsonable(o):
         if isinstance(o, dict):
@@ -272,7 +272,7 @@ def cli(family, make_problem, dims, argv=None):
     ap.add_argument("--dim", type=int, default=dims[0], choices=list(dims))
     ap.add_argument("--a", type=float, default=4.0, help="query-box half-width")
     ap.add_argument("--alphas", type=float, nargs="+", default=[0.0, 0.1],
-                    help="Route-1 regularizer grid (Fang et al.); the BEST RMSE "
+                    help="iterative-recovery regularizer grid (Fang et al.); the BEST RMSE "
                          "over these is reported. 0 = unregularized")
     ap.add_argument("--smoke", action="store_true", help="fast, low-fidelity check")
     args = ap.parse_args(argv)

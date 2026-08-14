@@ -1,4 +1,4 @@
-"""Inversion of the learned proximal map (Route 1 support).
+"""Inversion of the learned proximal map (LPN Iterative recovery support).
 
 We invert psi_theta by solving the convex program  min_x psi_theta(x) - <z, x>,
 whose stationarity condition is grad psi_theta(x) = z. Two convex solvers are
@@ -40,13 +40,13 @@ def invert_cvx_gd(
 ):
     """Invert by Adam on psi(y) + (alpha/2)||y||^2 - <x, y>.
 
-    NO box projection and no other safeguard: Route 1 must be run exactly as
+    NO box projection and no other safeguard: LPN Iterative recovery must be run exactly as
     Fang et al. specify it, with alpha its only knob. Constraining the iterate
-    to the training box would give Route 1 information about where psi_theta is
-    valid that Route 2 never receives, which is preferential treatment, not a
+    to the training box would give LPN Iterative recovery information about where psi_theta is
+    valid that One-shot recovery never receives, which is preferential treatment, not a
     fair baseline. Whatever this solver returns is what the method returns; the
     prox residual (see src.recovery.prox_residual) says how much to trust it,
-    and the SAME residual is computed for Route 2.
+    and the SAME residual is computed for One-shot recovery.
 
     Stops when the batch objective stops changing; that is a shared criterion,
     so per-point quality must be read from the residual, not from stopping.

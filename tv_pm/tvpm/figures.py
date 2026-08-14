@@ -31,6 +31,9 @@ import matplotlib
 matplotlib.use("Agg")                          # headless: save files, no display
 import matplotlib.pyplot as plt
 
+from src.plotstyle import apply as _apply_style
+_apply_style()          # one font size for every figure
+
 from . import dataset
 from src.conv_icnn import ConvICNN
 from .paths import FIGS as OUT
@@ -97,7 +100,7 @@ def figure_core(model, mu, s, meta, ev):
     ax[0].set_xlabel("total variation  TV$(y)$")
     ax[0].set_ylabel(r"recovered $J_\theta(y)$  (centered)")
     ax[0].set_title("1. recovered prior vs TV: correlated, not equal")
-    ax[0].legend(fontsize=8, loc="upper left")
+    ax[0].legend(loc="upper left")
 
     # --- Panel 2: smooth vs textured ---
     q = np.argsort(tv)
@@ -114,7 +117,7 @@ def figure_core(model, mu, s, meta, ev):
                                         (q[-1], (0.02, 0.02), "most textured")]):
         iax = ax[1].inset_axes([xy[0], xy[1], 0.26, 0.26])
         iax.imshow(y[idx], cmap="gray", vmin=0, vmax=1); iax.set_xticks([]); iax.set_yticks([])
-        iax.set_title(lab, fontsize=6)
+        iax.set_title(lab)
 
     # --- Panel 3: conditional cross-section ---
     rng = np.random.default_rng(11)
@@ -130,7 +133,7 @@ def figure_core(model, mu, s, meta, ev):
     ax[2].set_title("3. conditional slices: smoothed-kink, convex")
 
     fig.suptitle(f"Recovered TV regularizer $f_{{reg}}$ — {tag}, eval on cameraman"
-                 f"{_cfg(meta)}", fontsize=11)
+                 f"{_cfg(meta)}")
     fig.tight_layout(rect=[0, 0, 1, 0.96])
     return fig, corr
 
@@ -150,7 +153,7 @@ def figure_kernels(model, meta):
         else:
             a.axis("off")
     fig.suptitle(f"4. learned first-layer 3x3 kernels ({meta['arch']}-ICNN) — "
-                 f"look for difference stencils{_cfg(meta)}", fontsize=11)
+                 f"look for difference stencils{_cfg(meta)}")
     fig.tight_layout(rect=[0, 0, 1, 0.95])
     return fig
 

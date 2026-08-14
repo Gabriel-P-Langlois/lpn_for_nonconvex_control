@@ -19,6 +19,6 @@ print("\n--- assertions ---")
 assert m["route1_all_alphas_diverged"] is True, "flag not set"
 assert m["prior_rmse_route1"] is None, f"expected None, got {m['prior_rmse_route1']}"
 assert all(m["route1_diverged_per_alpha"].values()), "per-alpha flags wrong"
-assert m["prior_rmse_route2"] is not None, "Route 2 must be unaffected"
-print("PASS: all alphas diverged -> prior_rmse_route1 is None, Route 2 intact")
+assert m["prior_rmse_route2"] is not None, "One-shot recovery must be unaffected"
+print("PASS: all alphas diverged -> prior_rmse_route1 is None, One-shot recovery intact")
 print("      per-alpha RMSEs still recorded:", m["route1_rmse_per_alpha"])

@@ -85,7 +85,7 @@ def render(family, dim, name=None, a=4.0, n_eval=1000, invert_iters=20000):
     x_te = uniform_inputs(dim, 4000, a, seed=3)[:n_eval]
     y_tr = uniform_inputs(dim, 4000, train_a, seed=1)
 
-    # ONE Route-1 inversion on the test set, shared by the scatter and profile.
+    # ONE iterative-recovery inversion on the test set, shared by the scatter and profile.
     r1 = recover_prior_route1(x_te, psi, "cvx_gd", alpha=alpha,
                               max_iters=invert_iters)
     r2 = evaluate_learned_prior_G(x_te, G)
@@ -124,8 +124,8 @@ def main():
     ap.add_argument("--a", type=float, default=4.0)
     ap.add_argument("--n-eval", type=int, default=1000)
     ap.add_argument("--invert-iters", type=int, default=20000,
-                    help="Route-1 inversion budget for the figures; lower is faster "
-                         "but changes Route 1's curve, so keep the run's value")
+                    help="iterative-recovery inversion budget for the figures; lower is faster "
+                         "but changes the iterative recovery's curve, so keep the run's value")
     ap.add_argument("--open", action="store_true", help="open the figures (macOS)")
     args = ap.parse_args()
 

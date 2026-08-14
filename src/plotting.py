@@ -7,6 +7,9 @@ import matplotlib
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+
+from .plotstyle import apply as _apply_style
+_apply_style()          # one font size for every figure
 import numpy as np
 
 from .recovery import cvx, recover_prior_route1, evaluate_learned_prior_G
@@ -27,8 +30,8 @@ def plot_cross_sections(
 ):
     """Overlay learned vs true convex potential and prior along two axes.
 
-    The prior panel shows BOTH routes against the reference when ``model_G`` is
-    given. Showing only Route 2 (the old behaviour) made the plots useless for
+    The prior panel shows BOTH recoveries against the reference when ``model_G`` is
+    given. Showing only One-shot recovery (the old behaviour) made the plots useless for
     the one comparison they exist to support.
     """
     xi, p1, p2 = cross_section_points(a, spacing, dim)
@@ -44,21 +47,21 @@ def plot_cross_sections(
         axs[0][j].set_xlabel(f"$y_{j + 1}$")
         axs[0][j].legend(); axs[0][j].grid(True, alpha=0.3)
 
-        # recovered prior: both routes vs the reference
+        # recovered prior: both recoveries vs the reference
         true_prior = problem.prior_true(pts)
         axs[1][j].plot(xi, true_prior, "k--", lw=1.5, label="$J$ (exact)")
         r1 = recover_prior_route1(pts, model, inv_alg, alpha=alpha)
         axs[1][j].plot(xi, r1, "-", lw=1.5, alpha=0.85,
-                       label=rf"Route 1 (inversion, $\alpha$={alpha:g})")
+                       label=rf"Iterative (inversion, $\alpha$={alpha:g})")
         if model_G is not None:
             r2 = evaluate_learned_prior_G(pts, model_G)
-            axs[1][j].plot(xi, r2, "-", lw=1.5, alpha=0.85, label="Route 2 ($G$)")
+            axs[1][j].plot(xi, r2, "-", lw=1.5, alpha=0.85, label="One-shot ($G$)")
         axs[1][j].set_title(f"Recovered prior, axis {j + 1}, dim {dim}")
         axs[1][j].set_xlabel(f"$x_{j + 1}$")
         axs[1][j].legend(); axs[1][j].grid(True, alpha=0.3)
 
     if title:
-        fig.suptitle(title, fontsize=13)
+        fig.suptitle(title)
         fig.tight_layout(rect=[0, 0, 1, 0.96])
     else:
         fig.tight_layout()

@@ -1,0 +1,69 @@
+{
+  "rows": [
+    {
+      "method": "noisy input",
+      "PSNR vs clean (dB)": 22.49863929645887,
+      "SSIM vs clean": 0.4110111964775004,
+      "PSNR vs u_PM (dB)": null,
+      "SSIM vs u_PM": null,
+      "rel-L2 vs u_PM (%)": null,
+      "time (s)": 0.0,
+      "note": "sigma = 0.0781"
+    },
+    {
+      "method": "u_PM  (MCMC sampler)",
+      "PSNR vs clean (dB)": 27.322467619173224,
+      "SSIM vs clean": 0.7150943242458215,
+      "PSNR vs u_PM (dB)": null,
+      "SSIM vs u_PM": null,
+      "rel-L2 vs u_PM (%)": null,
+      "time (s)": 0.0030100345611572266,
+      "note": "ground truth, m=8000"
+    },
+    {
+      "method": "u_theta = grad psi  [LPN, both recoveries]",
+      "PSNR vs clean (dB)": 26.90305216171336,
+      "SSIM vs clean": 0.7055057237026345,
+      "PSNR vs u_PM (dB)": 41.47449955753491,
+      "SSIM vs u_PM": 0.9954052238626975,
+      "rel-L2 vs u_PM (%)": 1.6114935018619652,
+      "time (s)": 0.003371000289916992,
+      "note": "1 forward pass, no inversion"
+    },
+    {
+      "method": "prox of J_2, One-shot recovery  [check]",
+      "PSNR vs clean (dB)": 26.88081205997519,
+      "SSIM vs clean": 0.7029523239491964,
+      "PSNR vs u_PM (dB)": 37.28527358332653,
+      "SSIM vs u_PM": 0.9928384663375499,
+      "rel-L2 vs u_PM (%)": 2.6102965977980914,
+      "time (s)": 0.2658653259277344,
+      "note": "consistency check, not a denoiser"
+    },
+    {
+      "method": "u_hat  direct = prox J_theta",
+      "PSNR vs clean (dB)": 27.094874016663407,
+      "SSIM vs clean": 0.7112681742743188,
+      "PSNR vs u_PM (dB)": 46.9335735425951,
+      "SSIM vs u_PM": 0.9981990387080498,
+      "rel-L2 vs u_PM (%)": 0.859557352130972,
+      "time (s)": 0.08462691307067871,
+      "note": "recovered prior's prox IS the denoiser"
+    }
+  ],
+  "seed": 3,
+  "sweeps": 8000,
+  "sigma": 0.078125,
+  "t": 0.078125,
+  "grad_G_vs_x_median_pct": 1.744541118992965,
+  "grad_psi_vs_uPM_median_pct": 0.4042385520439659,
+  "check_solve_residual": {
+    "median": 0.0030752767343074083,
+    "max": 0.021212609484791756
+  },
+  "direct_prox_residual": 0.00026486083515919745,
+  "check_diverged": 0,
+  "psi_steps": 250000,
+  "psi_best_val": 0.00011081769480369985,
+  "J_ckpt": "tv_pm_64D_fc_m8000_w256_L2_b20.0_s250000_sig0.07812_t0.07812.pth"
+}

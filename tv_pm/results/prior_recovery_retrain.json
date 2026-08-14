@@ -1,0 +1,44 @@
+{
+  "delta": 0.02190000841505061,
+  "n_eval": 2000,
+  "rows": [
+    {
+      "method": "LPN Iterative recovery  [tripwire]",
+      "resid_rel_median": 0.11787682046771564,
+      "resid_rel_p90": 2.0673731136729883,
+      "ratio_to_delta": 5.382501149483838,
+      "cost": "2.5 s (inversion)",
+      "inversion_cert": 0.0004962366502929754,
+      "preimage_linf": 2.3649046421051025,
+      "diverged": true
+    },
+    {
+      "method": "One-shot recovery",
+      "resid_rel_median": 0.13396664937339142,
+      "resid_rel_p90": 0.5156796477655782,
+      "ratio_to_delta": 6.117196250998876,
+      "cost": "0.00 s (fwd)"
+    },
+    {
+      "method": "Direct fit",
+      "resid_rel_median": 0.08071239941064995,
+      "resid_rel_p90": 0.21190625465995855,
+      "ratio_to_delta": 3.685496273836177,
+      "cost": "0.03 s (fwd)"
+    }
+  ],
+  "alphas": {
+    "0.0": {
+      "resid_median": 0.11787682046771564,
+      "preimage_linf": 2.3649046421051025,
+      "diverged": true,
+      "seconds": 2.5366687774658203,
+      "inversion_cert_median": 0.0004962366502929754
+    }
+  },
+  "corr_J_ATV": {
+    "Direct fit": 0.9828261312761531,
+    "One-shot recovery": 0.9762522795339538,
+    "LPN Iterative recovery": 0.8722563567283771
+  }
+}

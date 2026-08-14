@@ -1,6 +1,6 @@
 """Training loop for the LPN potential (D2 convention, step-based budget).
 
-Both networks (the psi network and the Route-2 G network) use the SAME loss --
+Both networks (the psi network and the one-shot-recovery G network) use the SAME loss --
 MSE -- fixing the Phase 1 finding 3 mismatch (psi was MAE, G drifted to MSE).
 Training is mini-batched (batch 512), the measured ~50x speedup over the old
 full-batch loop; the target is regressed against a held-out validation set so

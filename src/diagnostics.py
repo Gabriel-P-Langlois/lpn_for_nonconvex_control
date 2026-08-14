@@ -13,6 +13,9 @@ import matplotlib
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+
+from .plotstyle import apply as _apply_style
+_apply_style()          # one font size for every figure
 import numpy as np
 
 from .recovery import (
@@ -60,8 +63,8 @@ def plot_conditional_cross_section(
     NOT collapse -- the background couples to x_1 -- and the figure should be read
     as learned-vs-exact PER DRAW, not as a single reference.
 
-    Both routes are drawn. Route 1's inversions for every background are batched
-    into ONE solve, so the figure costs a single Route-1 solve rather than
+    Both recoveries are drawn. the iterative recovery's inversions for every background are batched
+    into ONE solve, so the figure costs a single iterative-recovery solve rather than
     ``n_draws`` of them.
     """
     rng = np.random.default_rng(seed)
@@ -106,9 +109,9 @@ def plot_conditional_cross_section(
                     label=r"$\psi_\theta(y)-\psi(y)$" if first else None)
         if with_route1:
             axs[1].plot(xi, r1_err[k], "-", lw=1.1, color="C0", alpha=0.7,
-                        label=rf"Route 1: invert $\nabla\psi$ ($\alpha$={alpha:g})" if first else None)
+                        label=rf"Iterative: invert $\nabla\psi$ ($\alpha$={alpha:g})" if first else None)
         axs[1].plot(xi, r2_err[k], "-", lw=1.1, color="C1", alpha=0.7,
-                    label=r"Route 2: $G(x)-\frac{1}{2}\|x\|^2$" if first else None)
+                    label=r"One-shot: $G(x)-\frac{1}{2}\|x\|^2$" if first else None)
     # Reference band at +-1% of mean|J| on the right panel, so the recovery error
     # is read against the scale of the prior it approximates (auto-scaling alone
     # makes any error, however small, fill the panel). The band's half-height is
@@ -134,7 +137,7 @@ def plot_conditional_cross_section(
     axs[1].set_xlabel(r"$x_1$  (first coordinate; other $d-1$ fixed per background)")
     axs[1].set_ylabel(r"$\hat{J}(x)-J(x)$  (recovered $-$ exact prior)")
     fig.suptitle(rf"Conditional cross-section, backgrounds from the query box "
-                 rf"$[-{a:g},{a:g}]^{{{dim}}}$ (in-distribution)", fontsize=11)
+                 rf"$[-{a:g},{a:g}]^{{{dim}}}$ (in-distribution)")
     axs[1].set_xlabel("$x_1$"); axs[1].set_ylabel(r"$\hat{J}-J$")
     return _finish(fig, out_path)
 
@@ -160,8 +163,8 @@ def plot_typical_ray(problem, model, model_G, a, dim, out_path, alpha=0.0,
     axs[1].plot(t, problem.prior_true(pts), "k--", lw=1.4, label="$J$ exact")
     axs[1].plot(t, recover_prior_route1(pts, model, "cvx_gd", alpha=alpha,
                                        max_iters=invert_iters), "-",
-                lw=1.4, label=rf"Route 1 ($\alpha$={alpha:g})")
-    axs[1].plot(t, evaluate_learned_prior_G(pts, model_G), "-", lw=1.4, label="Route 2")
+                lw=1.4, label=rf"Iterative ($\alpha$={alpha:g})")
+    axs[1].plot(t, evaluate_learned_prior_G(pts, model_G), "-", lw=1.4, label="One-shot")
     axs[1].set_title(rf"Prior along $t\,\mathbf{{1}}/\sqrt{{d}}$ (dim {dim})")
     for ax in axs:
         ax.set_xlabel("$t$"); ax.legend(); ax.grid(True, alpha=0.3)
@@ -174,13 +177,13 @@ def plot_pred_vs_true(problem, x_test, r1, r2, out_path, alpha=0.0):
 
     Dimension-agnostic; shows bias and spread together; cannot be gamed by the
     choice of a slice. ``r1``/``r2`` are the recoveries, passed in so the
-    expensive Route-1 inversion is done ONCE per run, not once per figure.
+    expensive iterative-recovery inversion is done ONCE per run, not once per figure.
     """
     j_true = problem.prior_true(x_test)
     lo, hi = float(min(j_true.min(), r1.min(), r2.min())), float(max(j_true.max(), r1.max(), r2.max()))
 
     fig, axs = plt.subplots(1, 2, figsize=(12, 5.6), sharex=True, sharey=True)
-    for ax, est, nm in ((axs[0], r1, rf"Route 1 ($\alpha$={alpha:g})"), (axs[1], r2, "Route 2")):
+    for ax, est, nm in ((axs[0], r1, rf"Iterative ($\alpha$={alpha:g})"), (axs[1], r2, "One-shot")):
         ax.plot([lo, hi], [lo, hi], "k--", lw=1, label="identity")
         ax.scatter(j_true, est, s=6, alpha=0.35)
         rmse = float(np.sqrt(np.mean((est - j_true) ** 2)))
@@ -194,11 +197,11 @@ def plot_pred_vs_true(problem, x_test, r1, r2, out_path, alpha=0.0):
 def plot_prox_scatter(problem, model, y_train_like, out_path, max_pts=4000):
     """Learned grad psi against the exact prox, coordinatewise, in-distribution.
 
-    A diagnostic of the SHARED first network, not of Route 1. Route 2 does not
+    A diagnostic of the SHARED first network, not of LPN Iterative recovery. One-shot recovery does not
     bypass psi_theta: G is trained on the conjugate samples y_k = grad psi(x_k),
     G_k = <y_k,x_k> - psi(x_k), so every error in psi_theta propagates into G's
-    targets. This plot therefore bounds BOTH routes -- Route 1 because it inverts
-    grad psi, Route 2 because it is fitted to grad psi's image.
+    targets. This plot therefore bounds BOTH recoveries -- LPN Iterative recovery because it inverts
+    grad psi, One-shot recovery because it is fitted to grad psi's image.
     Coordinates are pooled: one point per (sample, coordinate).
     """
     y = np.asarray(y_train_like)[:max_pts]
@@ -213,18 +216,18 @@ def plot_prox_scatter(problem, model, y_train_like, out_path, max_pts=4000):
     ax.set_xlabel(r"exact $\nabla\psi(y)=\mathrm{prox}_J(y)$")
     ax.set_ylabel(r"learned $\nabla\psi_\theta(y)$")
     ax.set_title("Prox map of the SHARED first network, coordinatewise\n"
-                 f"(bounds both routes)   RMSE {rmse:.4f}".format(rmse=rmse))
+                 f"(bounds both recoveries)   RMSE {rmse:.4f}".format(rmse=rmse))
     ax.legend(); ax.grid(True, alpha=0.3)
     return _finish(fig, out_path)
 
 
 # ---------------------------------------------------------------- 5b ---------
 def plot_preimage_scatter(problem, model_G, x_test, out_path):
-    """Route 2's own check: grad G(x) against the EXACT preimage y*(x).
+    """the one-shot recovery's own check: grad G(x) against the EXACT preimage y*(x).
 
-    Route 2 rests on the identity grad G = (grad psi)^{-1}, since G ~= psi*. The
+    One-shot recovery rests on the identity grad G = (grad psi)^{-1}, since G ~= psi*. The
     exact preimage is available analytically (problem.preimage), so scattering
-    grad G(x) against y*(x) tests the identity Route 2 actually relies on. It is
+    grad G(x) against y*(x) tests the identity One-shot recovery actually relies on. It is
     the direct counterpart of the prox scatter, and costs one forward pass.
     Coordinates are pooled: one point per (sample, coordinate).
     """
@@ -239,7 +242,7 @@ def plot_preimage_scatter(problem, model_G, x_test, out_path):
     rmse = float(np.sqrt(np.mean((y_learned - y_exact) ** 2)))
     ax.set_xlabel(r"exact preimage $y^\star(x)=(\nabla\psi)^{-1}(x)$")
     ax.set_ylabel(r"learned $\nabla G(x)$")
-    ax.set_title("Route 2: does $\\nabla G$ invert $\\nabla\\psi$?\n"
+    ax.set_title("One-shot recovery: does $\\nabla G$ invert $\\nabla\\psi$?\n"
                  f"coordinatewise, on the query box   RMSE {rmse:.4f}")
     ax.legend(); ax.grid(True, alpha=0.3)
     return _finish(fig, out_path)

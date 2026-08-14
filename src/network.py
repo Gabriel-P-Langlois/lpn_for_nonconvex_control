@@ -81,7 +81,7 @@ class LPN(nn.Module):
         ``create_graph=True`` is needed ONLY to differentiate through the proximal
         map (a second-order quantity). Nothing in this codebase does: training
         regresses ``scalar``, and every caller of ``forward`` (conjugate sampling,
-        prox residuals, Route-2 preimages) consumes the gradient as a value. It
+        prox residuals, one-shot-recovery preimages) consumes the gradient as a value. It
         used to be unconditionally True, which built and retained a second-order
         graph on every call.
 

@@ -34,7 +34,7 @@ FAMILIES = {
 }
 
 # route1_all_alphas_diverged and route1_diverged_per_alpha are NOT optional.
-# Without them a diverged Route-1 RMSE enters the table unmarked and the table
+# Without them a diverged iterative-recovery RMSE enters the table unmarked and the table
 # cannot be audited from itself -- exactly the failure that once reported a
 # diverged d=16 solve (0.667) as beating a converged one (0.800).
 FIELDS = [
@@ -57,7 +57,7 @@ def main():
                     help="restrict to these dims (intersected with each family's DIMS)")
     ap.add_argument("--a", type=float, default=4.0)
     ap.add_argument("--alphas", type=float, nargs="+", default=[0.0, 0.1],
-                    help="Route-1 regularizer grid; best RMSE over these is reported")
+                    help="iterative-recovery regularizer grid; best RMSE over these is reported")
     ap.add_argument("--smoke", action="store_true")
     ap.add_argument("--allow-high-dim", action="store_true",
                     help=f"permit dims > {max(SAFE_DIMS)}; ask the user first")
@@ -95,7 +95,7 @@ def main():
     def fmt(v, w=9, p=4):
         return f"{v:{w}.{p}f}" if v is not None else f"{'n/a':>{w}}"
 
-    print("\n  RMSE: unconditional, all queries, both routes -- no abstention.")
+    print("\n  RMSE: unconditional, all queries, both recoveries -- no abstention.")
     print("  prox resid: ||grad psi(y)-x||/max(1,||x||), y from the solve (R1) or")
     print("              y = grad G(x) (R2). Same certificate, no ground truth.")
     print(f"\n{'experiment':>18} | {'R1 RMSE':>9} {'R2 RMSE':>9} | "
@@ -115,7 +115,7 @@ def main():
     n_div = sum(1 for r in rows if r.get("route1_all_alphas_diverged"))
     print(f"\n{len(rows) - n_fail}/{len(rows)} succeeded -> {args.out}")
     if n_div:
-        print(f"{n_div} run(s) had every alpha diverge; their Route-1 RMSE is blank.")
+        print(f"{n_div} run(s) had every alpha diverge; their iterative-recovery RMSE is blank.")
     return 1 if n_fail else 0
 
 
