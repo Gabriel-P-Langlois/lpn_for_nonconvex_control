@@ -1,0 +1,161 @@
+% =====================================================================
+%  Two-frame Beamer deck for tv_pm/prior_routes/three_way_retrain.ipynb
+%
+%  Build:   pdflatex prior_routes_slides.tex
+%
+%  Figures: prior_recovery.pdf and threeway_cameraman.pdf, written by
+%           prior_compare.py and compare_impl.py into tv_pm/results/figs/.
+%           \graphicspath below finds them beside this file or at the repo path.
+%
+%  Numbers: the reported 250 000-step run (tv_pm/results/prior_recovery.csv and
+%           threeway_psnr.csv). Reproduce with three_way_retrain.ipynb at
+%           PRESET = "full"; its RUN_TAG/OUT_TAG keep a rerun off these files.
+% =====================================================================
+\documentclass[aspectratio=169,10pt]{beamer}
+
+\usetheme{default}
+\usecolortheme{seahorse}
+\setbeamertemplate{navigation symbols}{}
+\setbeamertemplate{footline}[frame number]
+\setbeamerfont{frametitle}{size=\normalsize}
+\setbeamersize{text margin left=4mm, text margin right=4mm}
+
+\usepackage[T1]{fontenc}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{amsmath,amssymb}
+\usepackage{xcolor}
+
+\graphicspath{{./}{./figs/}{../results/figs/}{../../results/figs/}}
+
+\definecolor{iter}{HTML}{4C6EF5}
+\definecolor{oneshot}{HTML}{F59F00}
+\definecolor{direct}{HTML}{2F9E44}
+\definecolor{bad}{HTML}{E03131}
+
+\newcommand{\Iter}{\textcolor{iter}{\textbf{Iterative}}}
+\newcommand{\Osh}{\textcolor{oneshot}{\textbf{One-shot}}}
+\newcommand{\Dir}{\textcolor{direct}{\textbf{Direct fit}}}
+\newcommand{\upm}{u_{\mathrm{PM}}}
+\newcommand{\freg}{f_{\mathrm{reg}}}
+
+\begin{document}
+
+% =====================================================================
+% FRAME 1 -- recovering the prior
+% =====================================================================
+\begin{frame}{Recovering a denoiser's implicit regularizer: three routes}
+  \scriptsize
+
+  $\upm$ is the prox of an implicit regularizer (Gribonval), so its optimality
+  condition pins any correct prior on $\mathrm{range}(\upm)$ --- and no ground
+  truth is needed:
+  \vspace{-0.3em}
+  \[
+    \upm(x)=\mathrm{prox}_{\freg}(x)
+    \;\iff\;
+    \nabla \freg(y_k)=x_k-y_k,\quad y_k=\upm(x_k),
+    \qquad\text{read against the noise floor }\delta .
+  \]
+  \vspace{-1.5em}
+
+  \begin{columns}[T]
+    \begin{column}{0.545\textwidth}
+      \begin{tabular}{@{}p{0.20\linewidth}@{}p{0.78\linewidth}@{}}
+        \toprule
+        \Iter & $J_1=\langle x,w\rangle-\psi_\theta(w)-\tfrac12\|x\|^2$,\;
+                $\nabla\psi_\theta(w)=x$ \;\textcolor{gray}{(inversion \emph{per query})}\\[0.2em]
+        \Osh  & $J_2=G_\theta-\tfrac12\|x\|^2$,\; $G_\theta\approx\psi_\theta^{*}$
+                \;\textcolor{gray}{(one forward pass)}\\[0.2em]
+        \Dir  & $J_\theta$ fitted directly, $\nabla J_\theta(y_k)\approx x_k-y_k$
+                \;\textcolor{gray}{(no recovery step)}\\
+        \bottomrule
+      \end{tabular}
+      \vspace{0.25em}
+
+      $J_1,J_2$ are \textbf{1-semiconvex for free} --- the $-\tfrac12\|\cdot\|^2$
+      is in the Fenchel formula. $J_\theta$ is a plain ICNN, so it \emph{assumes}
+      $\freg$ is convex: true for TV, false in general.
+    \end{column}
+    \begin{column}{0.445\textwidth}
+      \centering
+      \begin{tabular}{@{}lrrrr@{}}
+        \toprule
+        prior & resid & p90 & $\times\delta$ & cost \\
+        \midrule
+        \Iter & 14.48\% & \textcolor{bad}{371\%} & 6.6 & 12.7\,s \\
+        \Osh  & 13.73\% & 98\% & 6.3 & 0.03\,s \\
+        \Dir  & \textbf{8.07\%} & \textbf{21\%} & \textbf{3.7} & 0.03\,s \\
+        \bottomrule
+      \end{tabular}\\[0.2em]
+      {\tiny 2000 held-out cameraman patches, $\delta=2.19\%$.\;
+       $\nabla\psi_\theta$ vs $\upm$: \textbf{0.41\%} median --- everything above
+       that is recovery-step error.}
+    \end{column}
+  \end{columns}
+
+  \vspace{0.15em}
+  \centering
+  % top crop removes the figure's own suptitle (duplicated by the slide)
+  \includegraphics[width=0.92\textwidth,trim=0 0 0 34,clip]{prior_recovery.pdf}
+
+  \vspace{-0.2em}
+  {\tiny \Iter{} has \emph{no safe} $\alpha$: at $\alpha=0$ the solve converges but
+   0.45\% of patches leave the valid box; at $\alpha=0.1$ the $O(\alpha)$ bias takes
+   it to 99.55\%.}
+
+\end{frame}
+
+% =====================================================================
+% FRAME 2 -- the prior in action
+% =====================================================================
+\begin{frame}{The prior in action, and what the comparison establishes}
+  \scriptsize
+
+  \centering
+  % top crop removes the figure's own 3-line suptitle
+  \includegraphics[width=0.78\textwidth,trim=0 0 0 88,clip]{threeway_cameraman.pdf}
+
+  \vspace{0.2em}
+  \begin{columns}[T]
+    \begin{column}{0.42\textwidth}
+      \centering
+      \begin{tabular}{@{}lrrr@{}}
+        \toprule
+        method & PSNR & vs $\upm$ & rel-$L^2$ \\
+        \midrule
+        noisy input & 22.50 & --- & --- \\
+        $\upm$ \textcolor{gray}{(MCMC)} & \textbf{27.32} & --- & --- \\
+        $u_\theta=\nabla\psi_\theta$ & 26.92 & 41.76 & 1.56\% \\
+        $\mathrm{prox}_{J_2}$ \textcolor{gray}{(check)} & 26.83 & 39.50 & 2.02\% \\
+        $\hat u=\mathrm{prox}_{J_\theta}$ & \textbf{27.09} & \textbf{46.93} & \textbf{0.86\%} \\
+        \bottomrule
+      \end{tabular}
+    \end{column}
+    \begin{column}{0.56\textwidth}
+      \raggedright
+      \textbf{Neither LPN route inverts anything to \emph{denoise}}: since
+      $\nabla G=(\nabla\psi)^{-1}$, \Iter{} and \Osh{} both deploy
+      $\nabla\psi_\theta$; they differ only in how they \emph{evaluate} the prior.
+      The $\mathrm{prox}_{J_2}$ panel is a consistency check, not a denoiser --- for
+      \Dir{} that object \emph{is} the deployed denoiser, so no gap can open.
+
+      \vspace{0.35em}
+      \textbf{1 --- the class is not negotiable} (mathematical). \Dir{} assumes
+      $\freg$ convex; on a nonconvex prior it reads 101\% with curvature pinned at
+      $0.000$ against an exact $-0.911$. No budget or dimension fixes it.
+
+      \vspace{0.2em}
+      \textbf{2 --- among valid routes, the ranking is a solver question}
+      (numerical). Exact inversion (1-D): \Iter{} 0.02\% vs \Osh{} 1.22\%; Adam
+      inversion at $d=64$: \Iter{} trails, at ${\sim}400\times$ the query cost.
+    \end{column}
+  \end{columns}
+
+  \vspace{0.1em}
+  {\tiny Cameraman, $\sigma=t=20/256$, $m=8000$, all nets 250\,000 steps.\;
+   Reproduce: \texttt{three\_way\_retrain.ipynb}, \texttt{PRESET="full"}.}
+
+\end{frame}
+
+\end{document}

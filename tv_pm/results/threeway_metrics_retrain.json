@@ -17,28 +17,28 @@
       "PSNR vs u_PM (dB)": null,
       "SSIM vs u_PM": null,
       "rel-L2 vs u_PM (%)": null,
-      "time (s)": 0.0030100345611572266,
+      "time (s)": 0.0035829544067382812,
       "note": "ground truth, m=8000"
     },
     {
       "method": "u_theta = grad psi  [LPN, both recoveries]",
-      "PSNR vs clean (dB)": 26.90305216171336,
-      "SSIM vs clean": 0.7055057237026345,
-      "PSNR vs u_PM (dB)": 41.47449955753491,
-      "SSIM vs u_PM": 0.9954052238626975,
-      "rel-L2 vs u_PM (%)": 1.6114935018619652,
-      "time (s)": 0.003371000289916992,
+      "PSNR vs clean (dB)": 26.98349923443487,
+      "SSIM vs clean": 0.7068150797431346,
+      "PSNR vs u_PM (dB)": 42.737013286162,
+      "SSIM vs u_PM": 0.9964406891586307,
+      "rel-L2 vs u_PM (%)": 1.393486841812648,
+      "time (s)": 0.002789020538330078,
       "note": "1 forward pass, no inversion"
     },
     {
-      "method": "prox of J_2, One-shot recovery  [check]",
-      "PSNR vs clean (dB)": 26.88081205997519,
-      "SSIM vs clean": 0.7029523239491964,
-      "PSNR vs u_PM (dB)": 37.28527358332653,
-      "SSIM vs u_PM": 0.9928384663375499,
-      "rel-L2 vs u_PM (%)": 2.6102965977980914,
-      "time (s)": 0.2658653259277344,
-      "note": "consistency check, not a denoiser"
+      "method": "prox of J_2, One-shot recovery",
+      "PSNR vs clean (dB)": 26.84186172529901,
+      "SSIM vs clean": 0.7045654248629435,
+      "PSNR vs u_PM (dB)": 40.91283159270187,
+      "SSIM vs u_PM": 0.9953698092932255,
+      "rel-L2 vs u_PM (%)": 1.719142816434402,
+      "time (s)": 0.31281089782714844,
+      "note": "consistency check"
     },
     {
       "method": "u_hat  direct = prox J_theta",
@@ -47,7 +47,7 @@
       "PSNR vs u_PM (dB)": 46.9335735425951,
       "SSIM vs u_PM": 0.9981990387080498,
       "rel-L2 vs u_PM (%)": 0.859557352130972,
-      "time (s)": 0.08462691307067871,
+      "time (s)": 0.08871912956237793,
       "note": "recovered prior's prox IS the denoiser"
     }
   ],
@@ -55,15 +55,15 @@
   "sweeps": 8000,
   "sigma": 0.078125,
   "t": 0.078125,
-  "grad_G_vs_x_median_pct": 1.744541118992965,
-  "grad_psi_vs_uPM_median_pct": 0.4042385520439659,
+  "grad_G_vs_x_median_pct": 1.7577522952929132,
+  "grad_psi_vs_uPM_median_pct": 0.40904618761850325,
   "check_solve_residual": {
-    "median": 0.0030752767343074083,
-    "max": 0.021212609484791756
+    "median": 0.0026256770361214876,
+    "max": 0.02351229637861252
   },
   "direct_prox_residual": 0.00026486083515919745,
   "check_diverged": 0,
   "psi_steps": 250000,
-  "psi_best_val": 0.00011081769480369985,
+  "psi_best_val": 0.00011436074419179931,
   "J_ckpt": "tv_pm_64D_fc_m8000_w256_L2_b20.0_s250000_sig0.07812_t0.07812.pth"
 }

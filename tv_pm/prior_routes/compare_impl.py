@@ -105,8 +105,8 @@ def compare(seed=3, sweeps=TW.SWEEPS):
         ("u_PM  (MCMC sampler)", "u_pm", time_pm, "ground truth, m=8000"),
         ("u_theta = grad psi  [LPN, both recoveries]", "lpn", time_lpn,
          "1 forward pass, no inversion"),
-        ("prox of J_2, One-shot recovery  [check]", "chk", time_chk,
-         "consistency check, not a denoiser"),
+        ("prox of J_2, One-shot recovery", "chk", time_chk,
+         "consistency check"),
         ("u_hat  direct = prox J_theta", "dir", time_dir,
          "recovered prior's prox IS the denoiser"),
     ]

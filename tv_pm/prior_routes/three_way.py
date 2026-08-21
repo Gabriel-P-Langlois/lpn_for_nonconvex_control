@@ -175,8 +175,9 @@ def train_G_grad(steps, seed=1):
     psi, u, _ = load_psi()
     tr, va, _ = load_splits()
     xtr, xva = flat(tr["x"]), flat(va["x"])
-    yk_tr, _ = conjugate_pairs_x(psi, u, xtr)
-    yk_va, _ = conjugate_pairs_x(psi, u, xva)
+    #yk_tr, _ = conjugate_pairs_x(psi, u, xtr)
+    #yk_va, _ = conjugate_pairs_x(psi, u, xva)
+    yk_tr, yk_va = flat(tr["y"]), flat(va["y"])    # the sampler's own u_PM
     G = LPN(in_dim=yk_tr.shape[1], hidden=WIDTH, layers=LAYERS, beta=BETA)
     t0 = time.time()
     hist = train_grad(G, yk_tr, xtr, yk_va, xva, steps=steps, seed=seed)
