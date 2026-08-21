@@ -1,0 +1,52 @@
+{
+  "sigma": 0.5,
+  "t": 0.25,
+  "steps": 50000,
+  "exact_u_min_curv": -0.9112791018232766,
+  "inversion": {
+    "cert_median": 0.0009115501818639588,
+    "cert_max": 0.002809742533816475,
+    "preimage_linf": 2.4036715030670166,
+    "iters": 20000,
+    "lr": 0.01,
+    "alpha": 0.0
+  },
+  "rows": [
+    {
+      "method": "LPN Iterative recovery",
+      "cls": "1-semiconvex",
+      "cost": "inversion/query",
+      "rel_l2": 0.016952612382343756,
+      "u_min_curv": -0.879702530253474,
+      "perp_rel_l2": 0.1366868747726755,
+      "perp_worst": 0.21773104062988208,
+      "resid_median": 0.14155876287479974,
+      "resid_p90": 0.2478868056029223,
+      "score_s": 80.7977659702301
+    },
+    {
+      "method": "One-shot recovery",
+      "cls": "1-semiconvex",
+      "cost": "forward",
+      "rel_l2": 0.437139492502166,
+      "u_min_curv": -0.8695373535154323,
+      "perp_rel_l2": 0.005213802385429251,
+      "perp_worst": 0.03972318745124859,
+      "resid_median": 0.03196975973983482,
+      "resid_p90": 0.04618802489771336,
+      "score_s": 0.09300112724304199
+    },
+    {
+      "method": "Direct fit",
+      "cls": "convex",
+      "cost": "forward",
+      "rel_l2": 0.1730719475176749,
+      "u_min_curv": 0.00095367431640625,
+      "perp_rel_l2": 0.009140465739629549,
+      "perp_worst": 0.031966477790934866,
+      "resid_median": 0.05940714815543405,
+      "resid_p90": 0.16501272373896714,
+      "score_s": 0.06567096710205078
+    }
+  ]
+}
