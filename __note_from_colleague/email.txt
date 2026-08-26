@@ -1,0 +1,16 @@
+Hi Gabriel,
+
+I have gone through the HJ experiments in the notebooks folder and the TV-PM problem. It seems each one is in order. Just a few comments and titles that I think we should clean up.
+
+1. Give proper names for the two methods instead of Route 1 and 2.
+2. Identify which of the plots and metrics will go into the paper 
+3. Clean the repo - removing the unused files and folders (e.g., the audit files and some figures, and clean up some comments in the files and README files  - we can do this after we submit the revised version) 
+4. For the TV-denoising problem, I tried to compare route 1 and route 2 to the Direct fit used. Could you take a look and let me know what you think?
+
+
+
+Best regards,
+
+-------------
+
+Tosin

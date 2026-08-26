@@ -1,0 +1,20 @@
+{
+  "name": "concave_quad_2D",
+  "family": "concave_quad",
+  "dim": 2,
+  "setting": "P0",
+  "hidden": 256,
+  "train_halfwidth": 4.0,
+  "n_train": 30000,
+  "n_eval": 1000,
+  "sandwich_K": 2048,
+  "n_query_U": 300,
+  "n_inhull": 300,
+  "inhull_frac": 1.0,
+  "rel_err_midpoint_inhull": 0.00192885330087792,
+  "median_gap_inhull": 0.024184161146487693,
+  "max_aposteriori_bound_inhull": 0.07015262617204732,
+  "bracket_holds": true,
+  "seconds": 1.2,
+  "status": "done"
+}

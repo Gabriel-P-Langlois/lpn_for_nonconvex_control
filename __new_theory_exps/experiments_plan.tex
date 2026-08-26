@@ -1,0 +1,198 @@
+\documentclass[11pt]{article}
+
+\usepackage[margin=1.1in]{geometry}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{bm}
+\usepackage{mathtools}
+\usepackage{amsthm}
+\usepackage{booktabs}
+\usepackage[colorlinks=true,allcolors=blue]{hyperref}
+\usepackage{cleveref}
+
+\theoremstyle{definition}
+\newtheorem{experiment}{Experiment}
+\theoremstyle{remark}
+\newtheorem*{remark}{Remark}
+\crefname{experiment}{Experiment}{Experiments}
+\Crefname{experiment}{Experiment}{Experiments}
+\crefname{section}{Section}{Sections}
+\Crefname{section}{Section}{Sections}
+
+% Macros borrowed from convergence_work.tex, kept identical so the two files
+% share notation.
+\def\R {\mathbb{R}}
+\def\Rn {\R^n}
+\newcommand{\normsq}[1]{\left\Vert{#1} \right\Vert_{2}^{2}}
+\newcommand{\norm}[1]{\left\Vert{#1} \right\Vert}
+\newcommand{\normone}[1]{\left\Vert{#1} \right\Vert_{1}}
+\def\bx {\boldsymbol{x}}
+\def\by {\boldsymbol{y}}
+\def\bz {\boldsymbol{z}}
+\def\JBVS {J_{\text{BVS}}}
+\def\prox {\mathrm{prox}}
+\def\psiNN {\psi_{\theta}}
+\def\GNN {G_{\phi}}
+\DeclareMathOperator*{\argmin}{arg\,min}
+
+\title{Planned experiments: prior recovery on held-out test data\\[1ex]
+\large Working note for the SIAP revision numerics (companion to \texttt{convergence\_work.tex})}
+\author{GPL}
+\date{\today}
+
+\begin{document}
+
+\sloppy
+
+\maketitle
+
+\noindent This note records two experiments approved for execution.
+\Cref{exp:rel} recomputes the reported error tables as relative quantities, without retraining.
+\Cref{exp:cmp} is the main experiment: on a held-out test set, we compare the paper's two-network recovery against a one-network recovery that uses the exact proximal map, at matched data, test set, and training budget.
+The convergence theory of \texttt{convergence\_work.tex} is the reference; cross-references below are to its results by name.
+
+\section{Setting and notation}
+\label{sec:setting}
+
+We keep the notation of \texttt{convergence\_work.tex}.
+Fix $t > 0$ and a prior $J$ on $\Rn$.
+Write $\psi(\bx) = \tfrac12\normsq{\bx} - t\,S(\bx,t)$ for the convex potential and $g = \psi^{*}$ for its conjugate, so that
+\begin{equation}
+\label{eq:maps}
+\nabla\psi = \prox_{tJ}, \qquad g(\by) = t\,\JBVS(\by) + \tfrac12\normsq{\by}, \qquad \nabla g = (\nabla\psi)^{-1},
+\end{equation}
+where $\JBVS$ is the convex prior the data actually determine ($\JBVS = J$ when $J$ is convex; the two differ only where $J$ is nonconvex, as for $J = -\normone{\cdot}$).
+The sampling identities give conjugate pairs $(\by_{k}, g(\by_{k}))$ with $\by_{k} = \nabla\psi(\bx_{k}) = \prox_{tJ}(\bx_{k})$ and $\bx_{k} = \nabla g(\by_{k})$, and $g(\by_{k}) = \langle\bx_{k},\by_{k}\rangle - \psi(\bx_{k})$.
+
+A single learned potential appears throughout: a convex network $\GNN$ fit to samples of $g$.
+From it we read the two recovered objects,
+\begin{equation}
+\label{eq:recovered}
+\text{recovered prior } \hat{J} = \GNN - \tfrac12\normsq{\cdot} \approx \JBVS, \qquad
+\text{recovered inverse prox } \nabla\GNN \approx (\nabla\psi)^{-1} = \nabla g .
+\end{equation}
+Both are evaluated only on the query box $[-4,4]^{n}$, where all errors are reported.
+
+\section{Experiment R: relative-error renormalization}
+\label{sec:rel}
+
+\begin{experiment}[relative errors; no retraining]
+\label{exp:rel}
+Recompute the reported errors in the four tables as relative $L^{2}$ quantities.
+For the prior, report $\norm{\hat{J} - \JBVS}_{2}/\norm{\JBVS}_{2}$ over the shared evaluation set; for the proximal map, report $\norm{\widehat{\prox} - \prox_{tJ}}_{2}/\norm{\prox_{tJ}}_{2}$.
+Both follow from the stored run metrics and closed-form ground truth on the evaluation points, with no training.
+The proximal column requires one forward pass of the saved networks, since only the prox residual, not the prox error against ground truth, is stored.
+\end{experiment}
+
+The reported tables carry raw mean-squared error, while $\psi$ and $g$ grow in magnitude with $n$ (the potential is essentially $\tfrac12\normsq{\cdot}$, of size $O(n)$ on a fixed box), so a fixed relative error produces a raw error that grows like $n^{2}$.
+\Cref{exp:rel} removes that scale and fixes the baseline against which every later claim of ``works'' or ``fails'' is judged.
+
+\section{Experiment C: one network vs two networks on held-out test data}
+\label{sec:cmp}
+
+The paper recovers the prior with two networks in sequence: a first network learns $\psi$, and its gradient generates the conjugate samples on which a second network is trained.
+For all four families the proximal map is available in closed form --- soft-thresholding for $\pm\normone{\cdot}$, a linear map for the concave quadratic, and a branch map for the min-plus mixture at $\sigma_{1} = \sigma_{2}$.
+The exact map lets us build the conjugate samples directly and train a \emph{single} network, deleting the first one.
+This is the plug-and-play scenario, in which a denoiser supplies the proximal map and one only fits its potential.
+\Cref{exp:cmp} asks the single quantitative question: does the one-network recovery match, or beat, the paper's two-network recovery, judged on data neither network saw?
+
+\begin{experiment}[matched comparison of the two recoveries]
+\label{exp:cmp}
+For every family and dimension, generate one set of training inputs and one held-out test set, then run both methods on them and report the test accuracy of each.
+\begin{description}
+\item[Data (shared).] Training inputs $\bx_{k}$, $k = 1,\dots,N$, drawn uniformly on the training box $[-A,A]^{n}$ (seed~1), with $A = \texttt{train\_halfwidth}(4)$ chosen so that $\nabla\psi$ maps the training box onto the query box; a validation set (seed~2) on the same box; and a held-out test set $\{\bz_{j}\}_{j=1}^{1000}$ drawn on the query box $[-4,4]^{n}$ (seed~3).
+The test set is disjoint from training and validation and is used by neither method during training.
+\item[Method 1 (one network, exact prox).] Using the closed-form prox, form the exact pairs $(\by_{k}, g(\by_{k}))$ with $\by_{k} = \prox_{tJ}(\bx_{k})$ and $g(\by_{k}) = \langle\bx_{k},\by_{k}\rangle - \psi(\bx_{k})$, and train one network $\GNN$ on them by value MSE.
+\item[Method 2 (two networks, the paper).] Train a first network $\psiNN$ on $\{(\bx_{k}, \psi(\bx_{k}))\}$ by value MSE; form the conjugate pairs $(\nabla\psiNN(\bx_{k}),\, \langle\cdot\rangle - \psiNN(\bx_{k}))$ that the first network emits; train a second network $\GNN$ on them by value MSE.
+\end{description}
+Every network --- $\GNN$ in Method~1, and $\psiNN$ and $\GNN$ in Method~2 --- uses the same architecture, the same loss, and the same budget of $S$ optimizer steps.
+The \emph{only} difference between the two methods is the source of the second network's training targets: the exact prox (Method~1) or the first network's output (Method~2).
+On the held-out test set report, for each method, the two relative $L^{2}$ errors of \cref{eq:recovered}:
+\begin{equation}
+\label{eq:acc}
+\text{prior accuracy } \frac{\norm{\hat{J} - \JBVS}_{2}}{\norm{\JBVS}_{2}}, \qquad
+\text{inverse-prox accuracy } \frac{\norm{\nabla\GNN - (\nabla\psi)^{-1}}_{2}}{\norm{(\nabla\psi)^{-1}}_{2}},
+\end{equation}
+with $\JBVS$ and $(\nabla\psi)^{-1}$ evaluated in closed form at the test points.
+\end{experiment}
+
+\subsection{Why the comparison is correct and fair}
+\label{sub:fair}
+
+The experiment compares the two methods on identical terms, and it compares the right quantities.
+
+\emph{Same recovered objects, by the same formulas.}
+Both methods produce a single conjugate network $\GNN$, and from it the same prior $\hat{J} = \GNN - \tfrac12\normsq{\cdot}$ and the same inverse prox $\nabla\GNN$ by the identical rules of \cref{eq:recovered}.
+We never compare a prior against a proximal map, or one method's forward map against the other's inverse map; each panel is one quantity against one closed-form reference.
+
+\emph{Same data, same test, same budget.}
+Both methods train on the same inputs $\bx_{k}$ and are scored on the same held-out points $\bz_{j}$, so the numbers measure generalization, not memorization, and no method sees the test set.
+Each network is trained for the same $S$ steps with the same architecture and loss, so neither the second network of Method~1 nor that of Method~2 is handicapped.
+Method~2 additionally pays to train its first network; that extra cost is a property of the two-network method, not an artifact of the comparison, and the point of the experiment is precisely to ask whether that cost buys anything on held-out data.
+
+\emph{The single isolated difference is the target source.}
+Method~2's second network is trained on conjugate pairs corrupted by the first network's gradient error; Method~1's is trained on exact pairs.
+Everything else is held fixed, so any gap in test accuracy is attributable to that corruption alone.
+The two methods' training inputs to $\GNN$ have the same functional form, $\nabla\psi(\bx_{k})$ versus $\nabla\psiNN(\bx_{k})$; their difference is exactly the effect under study, and both networks' training support covers the query box by the choice of $A$.
+
+\emph{The reference is the recoverable object.}
+The prior is scored against $\JBVS$, the convex prior the data determine, which equals $J$ for the three convex families and is the convex envelope for $J = -\normone{\cdot}$.
+Both methods are scored against the same $\JBVS$, so the nonconvex gap $J - \JBVS$ affects them equally and never distorts the comparison.
+
+\begin{remark}[a structural prediction]
+Three of the four families are separable ($\pm\normone{\cdot}$ and the concave quadratic), so under the exact prox their recovery factors into $n$ one-dimensional problems and the relative error should be nearly independent of $n$.
+The min-plus mixture with $\mu_{2} = \bm{1}/\sqrt{n}$ is the only non-separable family.
+\Cref{exp:cmp} shows whether the one-network recovery preserves that dimension-independence that the two-network cascade may lose.
+\end{remark}
+
+\section{Execution plan}
+\label{sec:execution}
+
+The two experiments run without touching any reported module, so the four family notebooks, \texttt{bin/plot.py}, and \texttt{bin/run\_all.py} are unaffected and their cached metrics still load.
+The guiding principles are the same five as before: add code rather than edit shared code; compose already-tested building blocks; isolate outputs in a separate namespace; make the driver idempotent so an interrupted run resumes; and gate cost behind a staged test ladder.
+
+\subsection{Shared, tested building blocks}
+\label{sub:blocks}
+
+Method~2 is the reported pipeline, so it reuses its exact functions: \texttt{src/train.py:train\_potential} (value MSE), \texttt{src/recovery.py:conjugate\_samples} (the conjugate pairs a trained $\psiNN$ emits), and \texttt{src/recovery.py:evaluate\_learned\_prior\_G}.
+Method~1 reuses \texttt{train\_potential} on the exact pairs.
+The only new mathematics is the closed-form forward prox $\nabla\psi$ and the exact conjugate values, in \texttt{src/exact\_prox.py}; it is pure and unit-tested, and it is the analytic inverse of the existing \texttt{Problem.preimage}.
+
+\subsection{New code, additive only}
+\label{sub:code}
+
+\begin{itemize}
+\item \texttt{src/exact\_prox.py} --- pure helpers: the forward prox $\nabla\psi$ per family, the exact triples $(\by_{k}, g(\by_{k}), \bx_{k})$, the closed-form $\JBVS$ and inverse prox at arbitrary points, and the relative-$L^{2}$ reducers. Unit-testable in isolation.
+\item \texttt{bin/compare\_recovery.py} --- the \cref{exp:cmp} driver: for a $(\text{family},\text{dim})$ it builds the shared data, runs Method~1 and Method~2 at a common budget $S$, scores both on the held-out test set, and writes one metrics JSON. Flags mirror \texttt{run\_all.py}: \texttt{-{}-families}, \texttt{-{}-dims}, \texttt{-{}-steps}, \texttt{-{}-allow-high-dim}, \texttt{-{}-out}.
+\item \texttt{bin/relative\_errors.py} --- the \cref{exp:rel} driver: read each reported \texttt{logs/<run>\_metrics.json}, recompute the relative value and proximal errors against closed-form ground truth, and write \texttt{logs/summary\_relerr.csv}.
+\item \texttt{bin/plot\_compare.py} --- render the \cref{exp:cmp} figure: two rows (prior accuracy, inverse-prox accuracy), one column per family, two lines per panel (one network, two networks), against dimension. A budget note appears while $S < 250000$.
+\end{itemize}
+
+\subsection{Isolation, idempotence, and namespace}
+\label{sub:iso}
+
+Outputs live in a separate namespace: \texttt{logs/<family>\_<dim>D\_compare\_metrics.json}, an aggregate \texttt{logs/summary\_compare.csv}, and \texttt{logs/summary\_relerr.csv}.
+These match the \texttt{*\_metrics.json} and \texttt{summary*.csv} patterns \texttt{.gitignore} already tracks.
+Diagnostic checkpoints go to an ignored \texttt{logs/compare\_ckpt/}.
+The driver is resumable: each $(\text{family},\text{dim})$ unit writes one result file with a terminal \texttt{"status":"done"} sentinel and is skipped on restart.
+Dimensions above eight are gated behind \texttt{-{}-allow-high-dim}, per the standing rule against unprompted high-dimensional runs.
+
+\subsection{Staged test ladder}
+\label{sub:tests}
+
+\begin{enumerate}
+\item[\textnormal{(T1)}] \emph{Unit}, seconds, no training: \texttt{tests/test\_exact\_prox.py} checks that $\nabla\psi$ is the gradient of $\psi$ to machine precision, that the exact triples satisfy $g(\by_{k}) = \langle\bx_{k},\by_{k}\rangle - \psi(\bx_{k})$, and that the relative-error reducer matches a hand computation.
+\item[\textnormal{(T2)}] \emph{Smoke}, one to two minutes: \texttt{bin/compare\_recovery.py -{}-smoke} runs one family at $n = 2$ with a reduced budget, exercising both methods end to end.
+\item[\textnormal{(T3)}] \emph{Low-dimension, matched budget}, a few hours: all four families at $n \in \{2,4,8\}$, both methods at the same $S$.
+\item[\textnormal{(T4)}] \emph{High-dimension, opt-in}, overnight: $n \in \{16,32,64\}$ behind \texttt{-{}-allow-high-dim}, resumable.
+\end{enumerate}
+Both methods are trained fresh at the same budget in every stage; no method is ever read from a previously trained checkpoint at a different budget.
+
+\section{Deliverables}
+\label{sec:deliverables}
+
+\Cref{exp:rel,exp:cmp} write their numbers to tracked JSON under \texttt{logs/}, mirroring the existing metrics files.
+The comparison figure is reproduced by \texttt{bin/plot\_compare.py} from cached metrics.
+No result in this note supersedes a reported table until reviewed.
+
+\end{document}

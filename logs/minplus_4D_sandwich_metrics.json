@@ -1,0 +1,20 @@
+{
+  "name": "minplus_4D",
+  "family": "minplus",
+  "dim": 4,
+  "setting": "P0",
+  "hidden": 256,
+  "train_halfwidth": 9.0,
+  "n_train": 60000,
+  "n_eval": 1000,
+  "sandwich_K": 2048,
+  "n_query_U": 300,
+  "n_inhull": 298,
+  "inhull_frac": 0.9933333333333333,
+  "rel_err_midpoint_inhull": 0.016472276636846073,
+  "median_gap_inhull": 2.065090768894134,
+  "max_aposteriori_bound_inhull": 2.8430010585173306,
+  "bracket_holds": true,
+  "seconds": 1.5,
+  "status": "done"
+}

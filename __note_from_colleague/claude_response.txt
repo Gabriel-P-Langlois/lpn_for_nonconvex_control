@@ -1,0 +1,35 @@
+Hi Tosin,
+
+Thanks for going through the experiments and for the three-way comparison. Replies to your four points below.
+
+1. Names for the two routes.
+I suggest we name them by mechanism rather than by authorship, since both routes deploy the same trained network psi_theta and differ only in how the prior is read out:
+  - Route 1 -> "inversion readout" (in full: prior recovery by regularized inversion, citing Fang et al.). Its defining feature is the per-query solve of grad psi_theta(y) = x.
+  - Route 2 -> "conjugate readout" (in full: prior recovery via a learned conjugate). Its defining feature is J(x) = G_theta(x) - (1/2)||x||^2 with G_theta approximating psi_theta^*, one forward pass.
+  - The direct method keeps the name "direct fit".
+For tables and legends: LPN-inv, LPN-conj, and Direct. Keeping the LPN stem signals the shared network and is fair to Fang et al.
+
+2. Plots and metrics for the paper.
+My current view, open to discussion:
+  - From the synthetic families: the error-versus-dimension summary (validation MSE for psi and G, prior RMSE for both routes), plus the certificate columns (prox residual and Fenchel-Young gap). One representative per-family figure at most; the rest goes to supplementary material.
+  - From TV-PM: the prior-recovery table (residual, p90, multiple of the noise floor delta, cost) and the cameraman denoising table (PSNR versus clean, PSNR versus u_PM, relative L2). I would lead recovery claims with relative L2; PSNR and SSIM as companions.
+  - Your prior_recovery and threeway_cameraman figures are strong candidates once the points below are settled.
+
+3. Repo cleanup.
+Agreed, and agreed on the timing: after we submit the revised version. The audit files stay until then; they are the record of what changed and why.
+
+4. The three-way comparison.
+I like it. The design is sound: one shared psi_theta makes the two LPN routes readouts of the same object, the additive constant is handled correctly (centred comparisons; prox_{f+c} = prox_f), and scoring against the prox optimality condition is the right move given that no ground-truth prior exists. The alpha dilemma you measured for the inversion route matches what we documented in src/invert.py. Four things before this goes further:
+
+  a. The scripts are not in the shared repo. three_way.py, compare_impl.py, and prior_compare.py exist only in your clone, and your layout differs from ours (a tvpm/ package inside tv_pm/, scripts beside it). Could you send the three scripts and the two new checkpoints (psi_theta and the gradient-fitted G_theta), or push them? I want to verify the numbers locally before we quote any of them.
+
+  b. The prose tables in the notebook are stale relative to the executed outputs. The Result markdown reports the Fang et al. row at 14.48% residual, 371% p90, 6.6x delta, 12.7 s, certificate 8.5e-4, 0.45% of patches escaping; the executed cell above it shows 11.79%, 376.57%, 5.4x delta, 3.0 s, certificate 4.63e-4, 0.60%. The other two rows agree, so it looks like the markdown predates a re-run of the alpha = 0 cell. Please sync them; the ordering is unaffected, but we should not quote two sets of numbers.
+
+  c. The loss deviation needs a sentence in the paper. We train psi_theta with MSE (targeting the posterior mean) rather than the proximal-matching loss of Fang et al. (which their Theorem 3.2 ties to the MAP). That is the right choice here because u_PM is our ground truth, but it means the "Fang et al." row uses their architecture and readout, not their loss, and the text must say so.
+
+  d. Scope. One image, one (sigma, t), one architecture is thin support for 8.07% versus 13.73%. Your own closing section says the same. Before this enters the paper I would run the full eval split and a second (sigma, t) pair; the ordering looks robust, and that would settle it.
+
+On your point that neither LPN route inverts anything to denoise: agreed, and worth keeping in the paper text, since it is the cleanest statement of why the comparison isolates the recovery step.
+
+Best,
+Gabriel

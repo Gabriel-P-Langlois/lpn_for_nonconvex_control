@@ -1,0 +1,20 @@
+{
+  "name": "quadratic_l1_4D",
+  "family": "quadratic_l1",
+  "dim": 4,
+  "setting": "P0",
+  "hidden": 256,
+  "train_halfwidth": 5.0,
+  "n_train": 60000,
+  "n_eval": 1000,
+  "sandwich_K": 2048,
+  "n_query_U": 300,
+  "n_inhull": 258,
+  "inhull_frac": 0.86,
+  "rel_err_midpoint_inhull": 0.026076251439852836,
+  "median_gap_inhull": 1.1012360382454291,
+  "max_aposteriori_bound_inhull": 4.266570741923253,
+  "bracket_holds": true,
+  "seconds": 2.1,
+  "status": "done"
+}

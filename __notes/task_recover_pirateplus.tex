@@ -1,0 +1,119 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1.1in]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\newcommand{\D}{\mathsf{D}}
+\newcommand{\prox}{\operatorname{prox}}
+\newcommand{\freg}{f_{\mathrm{reg}}}
+\newcommand{\code}[1]{\texttt{#1}}
+\title{Recovering the implicit regularizer of PIRATE+:\\ a self-contained task description}
+\author{G. Provencher Langlois}
+\date{August 26, 2026}
+\begin{document}
+\maketitle
+
+\section{What we already know}
+
+Plug-and-play methods insert a trained denoiser $\D$ into an iterative reconstruction, using it in place of the gradient step of a regularizer. PIRATE (Hu, Gan, Sun, An, Kamilov, ICLR 2024) does this for deformable image registration: it minimizes $g + h$ (their Eq.~5), and its iteration (their Eq.~6) takes the step $\phi - \gamma(\nabla g + \alpha\nabla r + \tau(\phi - \D(\phi)))$, so the implicit regularizer is the term whose gradient is the residual $\phi - \D(\phi)$. The paper justifies this reading through the identity for the exact minimum-MSE denoiser (their Eq.~11), $\phi - \D(\phi) = -\sigma^2\nabla\log p_z(\phi)$, which does make the residual a gradient. But that identity is a statement about the ideal denoiser. Their $\D$ is a trained network, and PIRATE+ is fine-tuned on a registration loss and so is the MMSE denoiser of no prior, so the identity has no referent for it. Whether the trained residual is a gradient of anything is neither stated nor tested.
+
+We tested it. Two facts stand from the earlier experiments (recorded in \code{numerics/pnp\_reg/}, summarized in \code{\_\_notes/note\_experiments\_summary.tex}).
+
+First, the released AWGN denoiser fails: its Jacobian is far from symmetric (asymmetry ratio $\rho = 0.44$), so no function has the residual as its gradient, and the objective PIRATE writes down does not exist for PIRATE's own denoiser.
+
+Second, the fine-tuned variant PIRATE+ (the same network after deep-equilibrium fine-tuning) nearly passes: $\rho = 0.016$, symmetric part positive definite, spectrum in $[0.95, 1.05]$. On its operating distribution PIRATE+ is close to affine (a fixed linear map plus a constant) to $0.2\%$. An affine denoiser has a \emph{quadratic} implicit regularizer, which we then wrote in closed form from the measured linear part $A$ (with symmetric part $S$) and constant $b$:
+\begin{equation}
+\nabla\freg(y) = S^{-1}(y - b) - y .
+\label{eq:quad}
+\end{equation}
+This closed form passed a held-out prediction (prox-identity residual $0.597$ against a predicted ceiling $0.704$). The relevant curvatures sit in $[-0.05, +0.06]$: small, and slightly negative in some directions.
+
+\section{The experiment}
+
+We recover $\freg$ a second way, by a fit that assumes nothing about its form, and check that it returns the same quadratic. The fit uses only forward passes of PIRATE+.
+
+The identity is one line. If $\D = \prox_{\freg}$, then $y = \D(z)$ satisfies the optimality condition $z - y = \nabla\freg(y)$, i.e.
+\begin{equation}
+z = \nabla G(y), \qquad G := \freg + \tfrac12\|\cdot\|^2 ,
+\label{eq:grad}
+\end{equation}
+and $G$ is convex whenever $\freg + \tfrac12\|\cdot\|^2$ is (which holds here, since $S \succ 0$). So the denoiser hands us gradient data for a convex potential: sample fields $z_k$, set $y_k = \D(z_k)$, and fit a convex network $G_\theta$ so that $\nabla G_\theta(y_k) = z_k$ in least squares. The regularizer is read off as $f_\theta = G_\theta - \tfrac12\|\cdot\|^2$.
+
+The point of the experiment is what $f_\theta$ turns out to be. If PIRATE+ is affine, then $f_\theta$ should come out essentially quadratic: near-constant curvature, and a gradient field that matches \eqref{eq:quad}. The network is free to bend; the claim is that it does not.
+
+\section{Why it matters}
+
+Three reasons, in order.
+
+The recovery is our headline method, and this is the first time we run it on a released operator rather than a hand-built one. It has to work here.
+
+It confirms the affine finding by an independent route. Equation~\eqref{eq:quad} came from inverting a measured linear map; $f_\theta$ comes from a network that could have represented any nonconvex regularizer and was told nothing about quadratics. If the two agree, the affine account is not an artifact of assuming affinity.
+
+It produces the explicit object PIRATE+ uses only implicitly: a function on deformation fields that we can evaluate, differentiate, and plot. With it, the PIRATE+ update becomes descent on a written-down objective, which is the statement the PIRATE paper assumes and cannot make.
+
+State the result plainly in the writeup: because the signal is quadratic, this is a confirmation, not a discovery. The discovery was the affinity itself. This experiment closes it.
+
+\section{Prerequisites}
+
+\begin{itemize}
+\item Repository \code{numerics/}. Released PIRATE weights are vendored at \code{numerics/ext/pirate/} (upstream \code{wustl-cig/PIRATE-code}, MIT). PIRATE+ is the fine-tuned checkpoint there; loading is shown in \code{ext/pirate/inference\_PIRATEplus.py}.
+\item Python environment \code{lpn\_env} (\code{\textasciitilde/miniforge3/envs/lpn\_env/bin/python}); PyTorch, CPU is fine.
+\item Existing code to reuse, not rewrite:
+  \begin{itemize}
+  \item \code{numerics/tv\_pm/tvpm/}: the gradient-supervised training path already used for the total-variation example --- \code{recover.build\_model} (a convolutional input-convex network), the training loop in \code{recover.run}, \code{dataset} for patching. Import these; do not edit \code{tv\_pm/} (it is a finished experiment).
+  \item \code{numerics/pnp\_reg/pnpreg/readout.py}: \code{value(G,y)} and \code{grad(G,y)} implement $f_\theta = G_\theta - \tfrac12\|\cdot\|^2$ and its gradient.
+  \item \code{numerics/pnp\_reg/pnpreg/affine.py}: the closed-form quadratic \eqref{eq:quad}, its symmetric part $S$, and the operating-distribution sampler \code{operating\_inputs}. This is the reference the fit is compared against; numbers are in \code{results/affine\_metrics.json}.
+  \end{itemize}
+\item New code goes in \code{numerics/pnp\_reg/pnpreg/} with a distinct checkpoint prefix; nothing under \code{tv\_pm/} or \code{ext/} is written.
+\end{itemize}
+
+\section{Data and weights (already in the repo)}
+
+Nothing needs to be downloaded. The PIRATE release is vendored verbatim at \code{numerics/ext/pirate/} (a shallow clone of \code{wustl-cig/PIRATE-code}, commit \code{4901b71}, MIT license; provenance in \code{numerics/ext/PROVENANCE.md}). Do not edit anything under \code{ext/}.
+
+Two denoiser checkpoints ship, both about $5$\,MB:
+\begin{itemize}
+\item PIRATE (the AWGN denoiser): \code{ext/pirate/pretrained\_model/AWGN\_denoiser/OASIS.pth.tar}.
+\item PIRATE+ (the deep-equilibrium fine-tuned denoiser): \code{ext/pirate/pretrained\_model/PIRATEplus/OASIS.pth.tar}. It is the \emph{same} twelve DnCNN tensors as PIRATE, stored under a \code{PIRATE.dnn.} key prefix; the two differ only by the fine-tuning, so the comparison between them is exactly matched.
+\end{itemize}
+
+The example registration field is at \code{ext/pirate/data/field.h5py} (shape $(1,3,80,96,112)$, about $10$\,MB); \code{fixed.nii.gz} and \code{moving.nii.gz} in the same folder are the image pair, needed only for the optional plug-back check. The DnCNN class is \code{ext/pirate/model/base.py}.
+
+Do not reimplement the loading. Our package already wraps it: \code{numerics/pnp\_reg/pnpreg/paths.py} holds the three paths, and \code{pnpreg/probe\_targets.py} provides \code{load\_pirate\_dncnn(which)} with \code{which} in \code{\{"pirate","pirate\_plus"\}} (returns the frozen network) and \code{load\_field(crop=None)}. The denoiser is $\D(z) = z - \mathrm{dnn}(z)$, since the network predicts the noise. There is one checkpoint per denoiser, trained at their $\sigma = 1$, where the noise standard deviation is $1$ (their noise is $\sigma^2\,\mathrm{randn}$); this is the single operating point, and it is the one \code{affine.operating\_inputs} samples.
+
+\section{Procedure}
+
+\begin{enumerate}
+\item \textbf{Data.} Draw fields $z_k$ from PIRATE+'s operating distribution: the released registration field plus unit-variance Gaussian noise (the sampler is \code{affine.operating\_inputs}; the noise level is their $\sigma = 1$). Set $y_k = \D(z_k)$ by forward passes of PIRATE+. Because the regularizer acts patchwise, cut $(z_k, y_k)$ into patches, as the total-variation experiment does; a few fields give hundreds of thousands of patch pairs. Hold out a fresh set of fields for evaluation.
+\item \textbf{Fit.} Train the convex network $G_\theta$ so that $\nabla G_\theta(y_k) = z_k$ in least squares, reusing \code{recover.build\_model} and \code{recover.run}. Use the same budget as the total-variation run. Keep the best-validation checkpoint.
+\item \textbf{Read off} $f_\theta = G_\theta - \tfrac12\|\cdot\|^2$ via \code{readout}.
+\item \textbf{Compare to the quadratic.} On held-out operating inputs, compare $\nabla f_\theta(y)$ against the closed form \eqref{eq:quad} from \code{affine.py}: relative $L^2$ of the two gradient fields, and the curvature spectrum of $f_\theta$ (curvatures should be near-constant and lie in the measured $[-0.05, +0.06]$ band, not spread out).
+\item \textbf{Certificates without ground truth.} Report the held-out proximal residual $\|\nabla G_\theta(\D(z)) - z\|$ (median and a high quantile --- the median hides localized failures). Re-probe $\prox_{f_\theta} = \nabla G_\theta^{\,*}$ with the Experiment~2 machinery (\code{pnpreg/probe.py}): by construction it must read asymmetry $\rho = 0$, and its symmetric-part spectrum should reproduce $S$.
+\end{enumerate}
+
+\section{What to expect}
+
+\begin{itemize}
+\item $f_\theta$ is quadratic to within the fit error: gradient field matching \eqref{eq:quad} at the percent level, curvature spectrum tight around the measured band.
+\item Held-out residual near the percent scale set by $\rho = 0.016$. As a control, the same fit on the AWGN denoiser ($\rho = 0.44$) should be worse by roughly $30\times$; if the residuals track the two asymmetry ratios, the probe and the recovery corroborate each other.
+\item If instead $f_\theta$ shows structure beyond quadratic above $0.2\%$, that contradicts Experiment~3.1 and must be chased before anything is written --- start from whether the fit or the affinity measurement is at fault.
+\end{itemize}
+
+\section{Deliverables}
+
+\begin{enumerate}
+\item The function $f_\theta$: value and curvature along field slices, and its comparison against \eqref{eq:quad}, as one figure.
+\item A short table: gradient-field relative $L^2$ (fit vs.\ closed form), curvature range, held-out residual (median and high quantile) for PIRATE+ and for the AWGN control.
+\item Optional and only if cheap: the plug-back check --- replace $\D$ by $\prox_{f_\theta}$ inside PIRATE's own iteration on their example data and confirm registration accuracy is unchanged. Success gives a PIRATE variant with the same performance whose update provably descends the explicit $f_\theta$.
+\end{enumerate}
+
+\section{Pitfalls}
+
+\begin{itemize}
+\item Restrict every error to the sampled range of $\D$. The regularizer is pinned only where the denoiser was probed; values off that range are inductive bias, not measurement.
+\item Report the high quantile of the residual, not only the median. In the earlier runs the median sat near $4.5\%$ while the $95$th percentile was $16.5\%$, and the tail carried the real information.
+\item Do not read the recovered curvature from pointwise second derivatives of the network; on a smooth-activation network they carry spatial wiggle that swamps small curvatures. Fit slopes to gradient components over the operating range instead, as in \code{note\_experiments\_summary.tex}, Section~5 (the ``right instrument'' paragraph of Experiment~3.2).
+\item Keep the noise convention theirs: their $\sigma = 1$ means noise standard deviation $1$, about half the field scale. This is the operating point; do not rescale it.
+\end{itemize}
+
+\end{document}

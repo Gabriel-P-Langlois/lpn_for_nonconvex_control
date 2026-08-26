@@ -1,0 +1,19 @@
+{
+  "name": "negl1_32D",
+  "family": "negl1",
+  "dim": 32,
+  "hidden": 256,
+  "steps": 250000,
+  "n_train": 480000,
+  "n_eval": 1000,
+  "train_halfwidth": 4.0,
+  "one_net_prior_relL2": 0.029351386310685602,
+  "one_net_invprox_relL2": 0.3413511388292795,
+  "one_net_G_val_mse": 2.8326523303985596,
+  "two_net_prior_relL2": 0.042607258584244134,
+  "two_net_invprox_relL2": 0.34670457448313224,
+  "two_net_psi_val_mse": 0.5733650922775269,
+  "two_net_G_val_mse": 2.2091338634490967,
+  "seconds": 3181.4,
+  "status": "done"
+}

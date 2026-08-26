@@ -1,0 +1,19 @@
+{
+  "name": "quadratic_l1_32D",
+  "family": "quadratic_l1",
+  "dim": 32,
+  "hidden": 256,
+  "steps": 250000,
+  "n_train": 480000,
+  "n_eval": 1000,
+  "train_halfwidth": 5.0,
+  "one_net_prior_relL2": 0.014832108746848793,
+  "one_net_invprox_relL2": 0.08601926031875338,
+  "one_net_G_val_mse": 0.4125906825065613,
+  "two_net_prior_relL2": 0.07681335083735678,
+  "two_net_invprox_relL2": 0.1371703344474313,
+  "two_net_psi_val_mse": 4.0981574058532715,
+  "two_net_G_val_mse": 1.6389504671096802,
+  "seconds": 3162.4,
+  "status": "done"
+}

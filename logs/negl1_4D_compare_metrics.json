@@ -1,0 +1,19 @@
+{
+  "name": "negl1_4D",
+  "family": "negl1",
+  "dim": 4,
+  "hidden": 256,
+  "steps": 250000,
+  "n_train": 60000,
+  "n_eval": 1000,
+  "train_halfwidth": 4.0,
+  "one_net_prior_relL2": 0.01767893271763192,
+  "one_net_invprox_relL2": 0.06419685114548204,
+  "one_net_G_val_mse": 0.0002037576778093353,
+  "two_net_prior_relL2": 0.011538998872864454,
+  "two_net_invprox_relL2": 0.051945383874487085,
+  "two_net_psi_val_mse": 0.0010584001429378986,
+  "two_net_G_val_mse": 0.00016661152767483145,
+  "seconds": 2958.8,
+  "status": "done"
+}

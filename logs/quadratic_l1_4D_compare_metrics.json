@@ -1,0 +1,19 @@
+{
+  "name": "quadratic_l1_4D",
+  "family": "quadratic_l1",
+  "dim": 4,
+  "hidden": 256,
+  "steps": 250000,
+  "n_train": 60000,
+  "n_eval": 1000,
+  "train_halfwidth": 5.0,
+  "one_net_prior_relL2": 0.004235652096488581,
+  "one_net_invprox_relL2": 0.03750699502937778,
+  "one_net_G_val_mse": 0.0011701124021783471,
+  "two_net_prior_relL2": 0.003776280299276472,
+  "two_net_invprox_relL2": 0.038426893283374654,
+  "two_net_psi_val_mse": 0.0002210440579801798,
+  "two_net_G_val_mse": 0.0006417256663553417,
+  "seconds": 2935.8,
+  "status": "done"
+}

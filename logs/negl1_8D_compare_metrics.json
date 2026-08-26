@@ -1,0 +1,19 @@
+{
+  "name": "negl1_8D",
+  "family": "negl1",
+  "dim": 8,
+  "hidden": 256,
+  "steps": 250000,
+  "n_train": 120000,
+  "n_eval": 1000,
+  "train_halfwidth": 4.0,
+  "one_net_prior_relL2": 0.020422476821389694,
+  "one_net_invprox_relL2": 0.10278410279864938,
+  "one_net_G_val_mse": 0.0010460256598889828,
+  "two_net_prior_relL2": 0.017313525426328285,
+  "two_net_invprox_relL2": 0.10450442096488213,
+  "two_net_psi_val_mse": 0.004709051921963692,
+  "two_net_G_val_mse": 0.0011346545070409775,
+  "seconds": 3010.2,
+  "status": "done"
+}

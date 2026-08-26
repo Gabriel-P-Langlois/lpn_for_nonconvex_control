@@ -1,0 +1,20 @@
+{
+  "name": "concave_quad_8D",
+  "family": "concave_quad",
+  "dim": 8,
+  "setting": "P0",
+  "hidden": 256,
+  "train_halfwidth": 4.0,
+  "n_train": 120000,
+  "n_eval": 1000,
+  "sandwich_K": 2048,
+  "n_query_U": 300,
+  "n_inhull": 300,
+  "inhull_frac": 1.0,
+  "rel_err_midpoint_inhull": 0.15587139015516366,
+  "median_gap_inhull": 15.869755924959525,
+  "max_aposteriori_bound_inhull": 11.939500688078116,
+  "bracket_holds": true,
+  "seconds": 1.9,
+  "status": "done"
+}

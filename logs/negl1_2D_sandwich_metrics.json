@@ -1,0 +1,20 @@
+{
+  "name": "negl1_2D",
+  "family": "negl1",
+  "dim": 2,
+  "setting": "P0",
+  "hidden": 256,
+  "train_halfwidth": 4.0,
+  "n_train": 30000,
+  "n_eval": 1000,
+  "sandwich_K": 2048,
+  "n_query_U": 300,
+  "n_inhull": 300,
+  "inhull_frac": 1.0,
+  "rel_err_midpoint_inhull": 0.004326805696736388,
+  "median_gap_inhull": 0.02170324421345893,
+  "max_aposteriori_bound_inhull": 0.05379678502754648,
+  "bracket_holds": true,
+  "seconds": 1.2,
+  "status": "done"
+}

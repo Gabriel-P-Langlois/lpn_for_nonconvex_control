@@ -1,0 +1,32 @@
+\contentsline {section}{\numberline {1}What PIRATE does}{2}{section.1}%
+\contentsline {section}{\numberline {2}The identification}{2}{section.2}%
+\contentsline {section}{\numberline {3}The hypothesis class: an ICNN minus a quadratic}{4}{section.3}%
+\contentsline {subsection}{\numberline {3.1}The regularizer is semiconvex, not convex}{4}{subsection.3.1}%
+\contentsline {subsection}{\numberline {3.2}The parametrization}{4}{subsection.3.2}%
+\contentsline {subsection}{\numberline {3.3}The training target is unchanged}{5}{subsection.3.3}%
+\contentsline {subsection}{\numberline {3.4}Verification}{5}{subsection.3.4}%
+\contentsline {section}{\numberline {4}The backward flow, and what a denoiser can reveal}{6}{section.4}%
+\contentsline {section}{\numberline {5}The program}{7}{section.5}%
+\contentsline {subsection}{\numberline {5.1}Understanding: what the theory says about PIRATE}{7}{subsection.5.1}%
+\contentsline {subsection}{\numberline {5.2}Diagnosis: is PIRATE's denoiser a proximal operator?}{8}{subsection.5.2}%
+\contentsline {paragraph}{Calibration.}{9}{section*.2}%
+\contentsline {paragraph}{The differential measurement.}{9}{section*.3}%
+\contentsline {subsection}{\numberline {5.3}Competition: doing PIRATE's task with the recovered regularizer}{9}{subsection.5.3}%
+\contentsline {paragraph}{Recovery.}{9}{section*.4}%
+\contentsline {paragraph}{Scoring.}{10}{section*.5}%
+\contentsline {paragraph}{Two routes.}{10}{section*.6}%
+\contentsline {paragraph}{The comparison.}{10}{section*.7}%
+\contentsline {subsection}{\numberline {5.4}One trained network in place of ten}{11}{subsection.5.4}%
+\contentsline {section}{\numberline {6}The two experiments}{11}{section.6}%
+\contentsline {subsection}{\numberline {6.1}Experiment 1: the mixture figure}{11}{subsection.6.1}%
+\contentsline {subsection}{\numberline {6.2}Experiment 2: the PIRATE/PIRATE+ diagnosis}{12}{subsection.6.2}%
+\contentsline {section}{\numberline {7}Risks and kill criteria}{13}{section.7}%
+\contentsline {paragraph}{The risk to state first, not last.}{13}{section*.8}%
+\contentsline {paragraph}{Dimension.}{13}{section*.9}%
+\contentsline {paragraph}{Kill criteria, decided now.}{14}{section*.10}%
+\contentsline {section}{\numberline {8}First step, for whoever picks this up}{14}{section.8}%
+\contentsline {subsection}{\numberline {8.1}Organization (revised 2026-07-29: the \texttt {tv\_pm} freeze is lifted)}{14}{subsection.8.1}%
+\contentsline {subsection}{\numberline {8.2}Step 1a: the semiconvex readout, checked against a known answer}{14}{subsection.8.2}%
+\contentsline {subsection}{\numberline {8.3}Step 1b: show the new class reaches what the old one cannot}{15}{subsection.8.3}%
+\contentsline {subsection}{\numberline {8.4}Step 1c: only then, choose a route}{15}{subsection.8.4}%
+\contentsline {paragraph}{Environment.}{16}{section*.11}%

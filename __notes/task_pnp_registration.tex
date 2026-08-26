@@ -1,0 +1,450 @@
+\documentclass[11pt]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage[hidelinks]{hyperref}
+
+% Items the user must verify personally before they are cited or relied on.
+\newcommand{\toverify}[1]{\textcolor{violet}{\textbf{#1}}}
+
+\newtheorem{proposition}{Proposition}
+\newtheorem{lemma}[proposition]{Lemma}
+\newtheorem{corollary}[proposition]{Corollary}
+\theoremstyle{definition}
+\newtheorem{remark}[proposition]{Remark}
+
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\Cov}{\operatorname{Cov}}
+\newcommand{\D}{\mathsf{D}}
+\newcommand{\freg}{f_{\mathrm{reg}}}
+\newcommand{\prox}{\operatorname{prox}}
+\newcommand{\range}{\operatorname{range}}
+\newcommand{\code}[1]{\texttt{#1}}
+\newcommand{\Jbvs}{J_{\mathrm{BVS}}}
+
+\title{Task: the plug-and-play registration prior as a Hamilton--Jacobi flow}
+\author{Task document}
+\date{2026-07-21, revised 2026-07-29}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+Hu, Gan, Sun, An and Kamilov, \emph{A Plug-and-Play Image Registration Network} (arXiv:\allowbreak 2310.04297v2, 2024), regularize deformable image registration with a denoiser trained on registration fields. Their equation (11) is Tweedie's formula, which places their method inside the correspondence this paper studies. Their denoiser is a proximal operator; the regularizer their algorithm minimizes is the viscous Hamilton--Jacobi value function of the true prior on registration fields, with the denoiser's noise level as time; and the paper's prior-reconstruction theorem inverts that flow. Two consequences follow. The hypothesis class for the recovered prior is not convex functions but $1$-semiconvex ones, which a single input-convex network minus a quadratic parametrizes exactly. And the backward flow recovers a prior only up to its proximal hull, so a denoiser at noise level $\sigma$ reveals a limited part of what it was trained on, with the limit computable in advance.
+\end{abstract}
+
+\tableofcontents
+
+\section{What PIRATE does}
+\label{sec:pirate}
+
+Deformable image registration seeks a field $\phi$ aligning a moving image $m$ to a fixed image $f$. PIRATE (\code{hu2023plug} in \code{proj-bib.bib}) solves
+\begin{equation}
+\label{eq:pirate_obj}
+\hat\phi \;=\; \arg\min_\phi\; \big\{ g(f, \phi \circ m) + h(\phi) \big\}
+\end{equation}
+by the steepest-descent regularization-by-denoising iteration
+\begin{equation}
+\label{eq:pirate_iter}
+\phi^{t+1} \;\leftarrow\; \phi^{t} - \gamma\Big( \nabla g(f,\phi^t\circ m) + \alpha \nabla r(\phi^t) + \tau\big(\phi^t - \D(\phi^t)\big) \Big),
+\end{equation}
+with $g$ a global cross-correlation fidelity, $r(\phi) = \|\nabla\phi\|_2^2$ an explicit smoothness term, and $\D$ a pretrained denoiser. Their novelty is that $\D$ denoises the \emph{registration field} rather than an image.
+
+The denoiser estimates $\phi$ from $z = \phi + n$, $n\sim\mathcal{N}(0,\sigma^2 I)$, $\phi \sim p_\phi$, in the minimum mean squared error sense, so that $\D(z) = \E[\phi\mid z]$ and $p_z = p_\phi * G_\sigma$. Their equation (11), from Reehorst and Schniter, is the residual identity
+\begin{equation}
+\label{eq:tweedie}
+\phi - \D(\phi) \;=\; -\sigma^2 \nabla \log p_z(\phi).
+\end{equation}
+In implementation $\D$ is a DnCNN trained on NODEO-estimated fields, downsampled by two; ten denoisers were trained at $\sigma = 1,\dots,10$ and the best selected. PIRATE+ additionally fine-tunes $\D$ end to end through the fixed point of \eqref{eq:pirate_iter} on a task loss.
+
+\section{The identification}
+\label{sec:identification}
+
+Throughout, $\D$ is the exact minimum mean squared error denoiser. Section~\ref{sec:tier1} treats the fact that it is not.
+
+Everything in this section and the next two instantiates the machinery of the manuscript (\code{main.tex}, Sections 2--4), with the viscous value function in place of the inviscid one. Table~\ref{tab:dictionary} is the dictionary; manuscript objects are referred to by their labels, which are stable under renumbering. The supporting references — Gribonval and Nikolova (\code{gribonval2020characterization}), Esteve and Zuazua (\code{esteve2020inverse}), Rockafellar and Wets (\code{rockafellar2009variational}), Amos et al.\ (\code{amos2017input}) — are already in \code{proj-bib.bib}, because the manuscript already uses them.
+
+\begin{table}[ht]
+\centering
+\begin{tabular}{lll}
+\toprule
+here (PIRATE) & manuscript & where \\
+\midrule
+noisy field $z$ & query point $x$ & \\
+denoiser $\D(z)$ & $f_t(x) = \prox_{tJ}(x) = x - t\nabla_x S(x,t)$ & \code{eq:minimum\_representation} \\
+$h = -\sigma^2\log p_z$ & $tS_\epsilon(\cdot,t)$, $\sigma^2 = t\epsilon$ & Proposition~\ref{prop:hj} \\
+$\psi = \tfrac12\|\cdot\|^2 + \sigma^2\log p_z$ & $\psi(\cdot,t) = \tfrac12\|\cdot\|^2 - tS(\cdot,t)$ & \code{eq:psi\_defn} \\
+$\freg = \psi^* - \tfrac12\|\cdot\|^2$ & $t\Jbvs$ & \code{eq:formula\_recovery\_prior} \\
+$J_\theta = G_\theta - \tfrac12\|\cdot\|^2$ & Route 2's readout, $G \approx \psi^*$ & \code{sec:numerics} \\
+backward flow, Section~\ref{sec:backward} & \code{thm:prior\_reconstruction}, \code{thm:prior\_optimality} & \code{sec:backward} \\
+\bottomrule
+\end{tabular}
+\caption{The correspondence between PIRATE's objects and the manuscript's. The manuscript works with the inviscid value function $S$; here every statement is applied to the viscous $S_\epsilon$, which is what the minimum mean squared error denoiser furnishes.}
+\label{tab:dictionary}
+\end{table}
+
+\begin{proposition}[the denoiser is a proximal operator]
+\label{prop:prox}
+Let $\psi(z) := \tfrac12\|z\|^2 + \sigma^2 \log p_z(z)$. Then $\nabla\psi = \D$ and
+\begin{equation}
+\label{eq:hess}
+\nabla^2 \psi(z) \;=\; \frac{1}{\sigma^2}\,\Cov(\phi \mid z) \;\succeq\; 0,
+\end{equation}
+so $\psi$ is convex \emph{whatever $p_\phi$ is}. Consequently $\D = \prox_{\freg}$ with $\freg := \psi^* - \tfrac12\|\cdot\|^2$, and $\nabla\freg(y) = z - y$ at $y = \D(z)$.
+\end{proposition}
+
+\begin{proof}
+The first assertion is \eqref{eq:tweedie} rearranged: $\nabla\psi(z) = z + \sigma^2\nabla\log p_z(z) = z - (z-\D(z)) = \D(z)$. For \eqref{eq:hess}, $\nabla^2\psi = \nabla\D$, and the posterior $q(\phi\mid z)\propto p_\phi(\phi)e^{-\|z-\phi\|^2/(2\sigma^2)}$ is an exponential family in the natural parameter $z/\sigma^2$ with base measure $p_\phi(\phi)\,e^{-\|\phi\|^2/(2\sigma^2)}$; the derivative of its mean in the natural parameter is the covariance, so $\nabla\D(z) = \Cov(\phi\mid z)/\sigma^2\succeq0$. Finally, since $\psi$ is closed and convex,
+\[
+\prox_{\freg}(z) = \arg\min_u \Big\{\psi^*(u) - \tfrac12\|u\|^2 + \tfrac12\|z-u\|^2\Big\} = \arg\min_u\big\{\psi^*(u) - \langle z,u\rangle\big\} = \nabla\psi(z) = \D(z),
+\]
+by the Fenchel identity $u\in\partial\psi(z) \Leftrightarrow z\in\partial\psi^*(u)$, and $\nabla\freg(y) = \nabla\psi^*(y) - y = z-y$. Here $\psi^*$ is differentiable at $y = \D(z)$: whenever $p_\phi$ is not supported on a proper affine subspace, $\Cov(\phi\mid z)\succ0$, so $\psi$ is strictly convex and $\psi^*$ is differentiable on $\range\D$.
+\end{proof}
+
+Modulo the viscous initial datum, this is the manuscript's characterization theorem (\code{thm:char\_prox}, from Gribonval and Nikolova): $\D$ is a proximal operator precisely because $\psi$ — the function of \code{eq:psi\_defn} evaluated on $S_\epsilon$, see Proposition~\ref{prop:hj} — is convex. What is new relative to the manuscript is the probabilistic proof of that convexity: the covariance identity \eqref{eq:hess} needs no convexity of the prior and covers the viscous case directly, and it is worth porting into the manuscript alongside the PDE argument.
+
+\begin{proposition}[the regularizer is a value function]
+\label{prop:hj}
+The regularizer that the denoiser contributes to \eqref{eq:pirate_obj} — namely $h(\phi) = -\sigma^2\log p_z(\phi)$, so that the residual term of \eqref{eq:pirate_iter} is $\tau\nabla h(\phi)$ — satisfies
+\begin{equation}
+\label{eq:h_is_S}
+h \;=\; t\,S_\epsilon(\cdot,t), \qquad \sigma^2 = t\epsilon,
+\end{equation}
+where $S_\epsilon$ solves $\partial_t S_\epsilon + \tfrac12\|\nabla_x S_\epsilon\|^2 = \tfrac{\epsilon}{2}\Delta_x S_\epsilon$ with initial datum the prior $J = -\epsilon\log p_\phi$ on registration fields.
+\end{proposition}
+
+This correspondence — the posterior mean as the gradient of a viscous Hamilton--Jacobi value function, with the noise level as time — is the subject of Darbon and Langlois (\code{darbon2021bayesian}, log-concave priors) and of its extension to nonconvex priors by Darbon, Langlois and Meng (\code{darbon2021connecting}); PIRATE is a published deep-learning method sitting exactly on it.
+
+\begin{proof}
+Normalize $p_\phi = e^{-J/\epsilon}$. The Cole--Hopf formula, equation (30) of \code{darbon2021connecting}, gives
+\[
+S_\epsilon(x,t) = -\epsilon\ln\Big( (2\pi t\epsilon)^{-n/2}\!\!\int e^{-(J(u) + \|x-u\|^2/(2t))/\epsilon}du \Big) = -\epsilon\ln\!\int p_\phi(u)G_\sigma(x-u)\,du = -\epsilon\ln p_z(x),
+\]
+using $\sigma^2 = t\epsilon$ in the Gaussian kernel. Multiply by $t$.
+\end{proof}
+
+\begin{corollary}
+\label{cor:time}
+PIRATE does not minimize the prior on registration fields. It minimizes that prior transported by a Hamilton--Jacobi flow, with the denoiser's training noise level as the time. Selecting one of ten denoisers trained at $\sigma=1,\dots,10$ is selecting a time, currently by grid search and reported as a hyperparameter.
+\end{corollary}
+
+\begin{remark}
+\label{rem:consistency}
+Together the two propositions give $\psi = \tfrac12\|\cdot\|^2 - tS_\epsilon$, which is \code{eq:psi\_defn} verbatim, so the convexity of $\psi$ in \eqref{eq:hess} says exactly that $z \mapsto tS_\epsilon(z,t)$ is $1$-semiconcave in the sense of the manuscript's \code{defn:semiconcavity} — the equivalence the manuscript records after \code{rem:semiconcavity}, and, via \code{thm:reachability}, the exact condition for the observed value function to be reachable from some initial datum. The classical proofs are PDE arguments (Cannarsa and Sinestrari, \code{cannarsa2004semiconcave}); here the estimate is proved probabilistically, needing no convexity of the initial datum, and covering the viscous case directly. Worth saying in the paper that the convexity constraint an input-convex network imposes \emph{is} that estimate. It is also why log-concavity of $p_\phi$ is not needed anywhere below.
+\end{remark}
+
+\begin{remark}
+\label{rem:dof}
+Given $\D$ at one noise level we know $\sigma^2 = t\epsilon$ but not $t$ and $\epsilon$ separately, and $\psi$, $\freg$ and $h$ depend only on $\sigma^2$; the splitting names the initial datum and nothing else. Take $\epsilon=1$, so $t=\sigma^2$. Separately, note the scope: $p_\phi$ is the distribution of the fields the denoiser was trained on, which are NODEO estimates on brain magnetic resonance data at half resolution. What is recovered is the regularizer implicit in \emph{those} fields at \emph{one} noise level. State this up front, as \code{tv\_pm} states its natural-patch scope, rather than leaving it to be found.
+\end{remark}
+
+\section{The hypothesis class: an ICNN minus a quadratic}
+\label{sec:class}
+
+\subsection{The regularizer is semiconvex, not convex}
+
+By construction $\freg + \tfrac12\|\cdot\|^2 = \psi^*$, and a conjugate is always convex. So, with no hypothesis on $p_\phi$:
+
+\begin{lemma}
+\label{lem:semiconvex}
+$\freg$ is $1$-semiconvex, that is $\freg + \tfrac12\|\cdot\|^2$ is convex. It is convex if and only if $\nabla^2\psi\preceq I$, that is if and only if $\Cov(\phi\mid z)\preceq\sigma^2 I$ for all $z$.
+\end{lemma}
+
+In the manuscript's notation, $\freg = t\Jbvs$ computed from $S_\epsilon$: the identity $\freg + \tfrac12\|\cdot\|^2 = \psi^*$ is \code{eq:formula\_recovery\_prior}, and its convexity is what \code{thm:prior\_reconstruction} asserts of the backward viscosity solution ($\tau w(\cdot,\tau)$ semiconvex with unit constant).
+
+For a log-concave prior the second condition is free, by Brascamp--Lieb. That is why the anisotropic total-variation example in \code{tv\_pm} could fit $\freg$ directly with an input-convex network, and why the hypothesis went unnoticed there. There is no reason for NODEO-estimated fields to be log-concave, and where the posterior is multimodal the condition fails.
+
+The bound is sharp but not attained. In one dimension, wherever $\psi''>0$, $\freg'' = 1/\psi'' - 1 \ge -1$, with equality approached exactly where $\psi''\to\infty$, that is where $\Cov(\phi\mid z)\gg\sigma^2$. The worst curvature of $\freg$ sits in the multimodal region and reaches $-1$ only in the limit of diverging posterior variance; in the mixture example below it is $-0.911$ at $\sigma = 0.5$.
+
+\subsection{The parametrization}
+
+Functions that are $1$-semiconvex are exactly those of the form ``convex minus $\tfrac12\|\cdot\|^2$''. So take
+\begin{equation}
+\label{eq:param}
+J_\theta(y) \;=\; G_\theta(y) - \tfrac12\|y\|^2, \qquad G_\theta \ \text{an input-convex network}.
+\end{equation}
+This is not a new class for the project: it is Route 2's readout. The manuscript's \code{sec:inverse\_incomplete\_info} proposes learning the convex function $t\Jbvs + \tfrac12\|\cdot\|^2$ rather than $\Jbvs$ itself (with the factor $t$, per \code{eq:formula\_recovery\_prior}; the sentence there that drops it is a recorded erratum), and its numerics train a second network $G \approx \psi^*$ and read the prior off as $G - \tfrac12\|\cdot\|^2$ (\code{sec:numerics}). Equation~\eqref{eq:param} is that readout with the input-convex network of \code{subsec:background\_nns}; what this section adds is that the class so parametrized is \emph{exactly} the $1$-semiconvex functions — no smaller, no larger — which is what the recovery of a possibly nonconvex $\freg$ requires.
+
+\begin{proposition}[the parametrization is tight]
+\label{prop:tight}
+Every $\freg$ of the form in Proposition~\ref{prop:prox} has the form \eqref{eq:param} with $G_\theta = \psi^*$ convex; and conversely, for every convex $G_\theta$,
+\begin{equation}
+\label{eq:prox_G}
+\prox_{J_\theta}(x) \;=\; \arg\min_u\ \big\{G_\theta(u) - \langle x,u\rangle\big\} \;=\; \nabla G_\theta^*(x),
+\end{equation}
+so $\prox_{J_\theta}$ is an exact proximal operator, single-valued whenever $G_\theta$ is strictly convex.
+\end{proposition}
+
+\begin{proof}
+The forward direction is Lemma~\ref{lem:semiconvex}. For the converse,
+\[
+J_\theta(u) + \tfrac12\|x-u\|^2 = G_\theta(u) - \tfrac12\|u\|^2 + \tfrac12\|x\|^2 - \langle x,u\rangle + \tfrac12\|u\|^2 = G_\theta(u) - \langle x,u\rangle + \tfrac12\|x\|^2 ,
+\]
+in which the quadratic in $u$ cancels identically. The remaining problem is convex, so its minimum is global and characterized by $x\in\partial G_\theta(u)$.
+\end{proof}
+
+That cancellation is the point: the nonconvexity of $J_\theta$ is compensated exactly by the quadratic in the proximal objective, so allowing $J_\theta$ to be nonconvex introduces no global optimization difficulty. Strict convexity of $G_\theta$ can be forced by adding $\tfrac{\delta}{2}\|y\|^2$, at the cost of restricting $J_\theta$ to semiconvexity modulus $1-\delta$; we do not expect this to be needed.
+
+\subsection{The training target is unchanged}
+
+Since $\nabla J_\theta = \nabla G_\theta - y$, the prox-optimality target $\nabla J_\theta(y_k) = z_k-y_k$ at $y_k = \D(z_k)$ is identical to
+\begin{equation}
+\label{eq:target}
+\nabla G_\theta(y_k) \;=\; z_k ,
+\end{equation}
+which is the inversion identity $\nabla\psi^*(y_k) = z_k$. In the manuscript's terms this is the sampling identity \code{eq:yk\_formula} read backwards: $y_k = \D(z_k)$ is $y_k = x_k - t\nabla_x S(x_k,t)$ of \code{eq:minimum\_representation}, so each denoiser evaluation hands over one point $y_k$ of the prior's domain together with the gradient $\nabla G_\theta(y_k) = z_k$ there. The data required are therefore unchanged: denoiser evaluations, nothing else. No potential $\psi_\theta$, no inversion, no conjugation, no log-partition function anywhere.
+
+Two practical consequences, both used in Section~\ref{sec:first}. The network that is \emph{trained} is an ordinary input-convex network, exactly as in \code{tv\_pm}; only the target array differs. The quadratic enters only at readout. And the \code{tv\_pm} design is the special case in which $\freg$ happens to be convex, that is in which $G_\theta$ is $1$-strongly convex.
+
+\subsection{Verification}
+\label{sec:verif_class}
+
+Checked on a separated two-component Gaussian mixture prior in one dimension, $p_\phi = \tfrac12\mathcal{N}(-2,\nu) + \tfrac12\mathcal{N}(2,\nu)$ with $\nu = 0.05$, which is not log-concave; $\epsilon = 1$, so $t = \sigma^2$ and $J = -\log p_\phi$. The conjugate $\psi^*$ is evaluated exactly, through the inverse of $\D$ (which is strictly increasing), not by a bounded grid supremum: a grid supremum truncates — at $\sigma = 1$, $\psi^*(y)$ at $y = 3$ is attained at $x \approx 23$ — and the truncated $\freg$ is affine beyond the truncation point, which fabricates curvature exactly $-1$ and corrupted an earlier version of these numbers (corrected 2026-07-29). Everything else is a dense grid, so that no optimizer is trusted (\code{semiconvex\_check.py}; $\sigma = 0.5$ shown, $\sigma = 1$ differs in the values, not the conclusions).
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+claim & test & result \\
+\midrule
+$\freg$ is nonconvex & second difference on the grid & min curvature $-0.911$ \\
+$\freg + \tfrac12\|\cdot\|^2$ is convex & second difference on the grid & violation $0$ at double precision \\
+$\prox_{\freg} = \D$ globally & brute-force grid minimization & objective gap $8.9\times10^{-16}$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+The third row scores the objective rather than the minimizer. With the exact conjugate the two agree here — the grid minimizer matches $\D(x)$ to sub-cell accuracy — but the caution stands on structural grounds: where $\psi''$ is very large, $G_\theta = \psi^*$ is nearly affine, so the objective in \eqref{eq:prox_G} is nearly flat and its minimizer is ill-conditioned even where its value is not. Any implementation of $\prox_{J_\theta}$ should be tested on objective value, not on the minimizer.
+
+\section{The backward flow, and what a denoiser can reveal}
+\label{sec:backward}
+
+Proposition~\ref{prop:hj} makes recovery exactly the manuscript's inverse problem (its Section \code{sec:backward}): given the value function at one time, find the initial data. The manuscript's three statements — reachability if and only if the value function is semiconcave (\code{thm:reachability}), the backward viscosity solution (\code{thm:prior\_reconstruction}), and its optimality among all reachable initial data (\code{thm:prior\_optimality}, from Esteve and Zuazua, \code{esteve2020inverse}) — transfer to the viscous flow and are what makes the following exact. The backward Cauchy problem is ill-posed in general: the forward flow is a smoothing, and smoothings destroy information. So it is worth being precise about what survives.
+
+Write $h = tS_\epsilon(\cdot,t)$, and let $e_1$ denote the unit-parameter Moreau envelope, $e_1 f(x) := \min_u\{f(u) + \tfrac12\|x-u\|^2\}$. Since $\nabla h = \mathrm{id} - \D = \mathrm{id} - \prox_{\freg}$, $h$ agrees with $e_1\freg$ up to an additive constant; normalize it away and take $h = e_1\freg$. The backward evolution is the sup-convolution
+\begin{equation}
+\label{eq:backward}
+\Jbvs(u) \;=\; \sup_x\ \Big\{ S_\epsilon(x,t) - \tfrac{1}{2t}\|x-u\|^2 \Big\} \;=\; \tfrac{1}{t}\sup_x\ \big\{ h(x) - \tfrac12\|x-u\|^2 \big\},
+\end{equation}
+which is the manuscript's \code{eq:backward\_hj\_prior} at $\tau = 0$ with the viscous $S_\epsilon(\cdot,t)$ as terminal data. Multiplying by $t$ and adding $\tfrac12\|u\|^2$ makes the right-hand side a supremum of functions affine in $u$: this is \code{eq:formula\_recovery\_prior}, $t\Jbvs + \tfrac12\|\cdot\|^2 = \psi^*$, so $t\Jbvs$ is $1$-semiconvex automatically — \code{thm:prior\_reconstruction} again. Composing the Moreau envelope with the sup-convolution gives the \emph{proximal hull} (Rockafellar and Wets, \code{rockafellar2009variational}, \S1.G). The identification to keep in view is
+\begin{equation}
+\label{eq:three_way}
+\freg \;=\; t\,\Jbvs,
+\end{equation}
+statement 1 below: the regularizer PIRATE's denoiser determines and the manuscript's backward viscosity solution are one object, up to the factor $t$. Two statements follow.
+
+\begin{enumerate}[leftmargin=2em]
+\item $t\Jbvs = \freg$. The backward flow recovers the regularizer whose proximal operator is $\D$ with no loss, because $\freg$ is $1$-semiconvex and is therefore its own proximal hull; equivalently, \code{eq:formula\_recovery\_prior} gives $t\Jbvs + \tfrac12\|\cdot\|^2 = \psi^* = \freg + \tfrac12\|\cdot\|^2$. Verified to $1.4\times10^{-14}$ after matching the additive constant, which is unidentifiable in any case since $\prox_{f+c} = \prox_f$.
+\item $\freg \ne tJ$ in general. What is lost lies between the recovered $\freg$ and the true prior $J$, not between $\freg$ and the recovery. This is the manuscript's \code{thm:prior\_optimality} transferred to the viscous flow: for any $f$ with $\prox_f = \D$ — any initial datum reaching the observed value function — one has $t\Jbvs\le f$ everywhere with equality on $\range\D$, which is the theorem's contact set $X_t(S)$, since $\range\D = \{z - t\nabla_z S_\epsilon(z,t)\}$ by \code{eq:minimum\_representation}. The inequality holds because $h(x)\le f(u) + \tfrac12\|x-u\|^2$ for all $x,u$, the equality because that is tight at $u=\D(x)$. A prior is pinned by its proximal operator on the range of that operator and merely bounded below off it, so any two priors sharing a proximal hull are indistinguishable from $\D$.
+\end{enumerate}
+
+Since $\freg$ is $1$-semiconvex it has curvature at least $-1$, so $\freg/t$ has curvature at least $-1/t$: the recovered prior's nonconvexity is capped by the noise level, however nonconvex the truth. Measured on the mixture of Section~\ref{sec:verif_class}, where the two functions being compared are explicit: the true prior is $J = -\log p_\phi$ with $p_\phi = \tfrac12\mathcal{N}(-2,\nu) + \tfrac12\mathcal{N}(2,\nu)$, $\nu = 0.05$, and the recovered prior is $\freg/t = (\psi^* - \tfrac12\|\cdot\|^2)/t = \Jbvs$, where $\psi = \tfrac12\|\cdot\|^2 + \sigma^2\log p_z$ and $p_z$ is the same mixture widened to variance $\nu + \sigma^2$. With $\epsilon=1$ and $t=\sigma^2$:
+
+\begin{center}
+\begin{tabular}{cccccc}
+\toprule
+$\sigma$ & $t$ & $\max|\freg/t - J| / \operatorname{range}(J)$ & min curvature of $J$ & min curvature of $\freg/t$ & floor $-1/t$ \\
+\midrule
+$0.5$ & $0.25$ & $20.8\%$ & $-1580$ & $-3.65$ & $-4$ \\
+$1.0$ & $1.00$ & $23.8\%$ & $-1580$ & $-0.73$ & $-1$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+The recovered prior's curvature approaches its floor $-1/t$ without attaining it — the bound is met only where the posterior variance diverges — against a true prior several hundred times more sharply nonconvex. The normalization $\freg\approx tJ$ is exact in the Gaussian case: for $p_\phi = \mathcal{N}(0,c)$, with $c$ the variance, one gets $\psi(x) = \tfrac{c}{c+\sigma^2}\tfrac{x^2}{2}$ and $\freg(x) = \tfrac{\sigma^2}{c}\tfrac{x^2}{2} = tJ(x)$ up to a constant. In general it is the leading-order relation as $t\to0$; the middle column shows the gap growing with $t$, as expected. We have not proved the general limit and should not claim it.
+
+\begin{quote}
+\textbf{Statement for the paper.} A denoiser trained at noise level $\sigma$ reveals its prior only up to that prior's proximal hull at $t=\sigma^2/\epsilon$. The finer nonconvex structure is not hard to recover, it is absent. The recoverable part has curvature bounded below by $-1/t$, and $\sigma$ sets how much survives. This is \code{thm:prior\_optimality} made quantitative for plug-and-play.
+\end{quote}
+
+This is a limitation result for plug-and-play that we have not seen stated. It also says that approaching $J$ requires denoisers at \emph{smaller} $\sigma$, so PIRATE's ten networks are ten points on that hierarchy.
+
+\section{The program}
+\label{sec:programme}
+
+The program has three parts, in increasing order of cost. First, state what the theory says about plug-and-play registration; this is written and requires no computation. Second, measure whether PIRATE's trained denoiser satisfies the hypothesis the theory rests on; this requires forward passes and automatic differentiation, but no training. Third, use the recovered regularizer to do PIRATE's task; this requires training one network and a registration comparison. Section~\ref{sec:experiments} specifies the two concrete experiments that carry the measurable content.
+
+\subsection{Understanding: what the theory says about PIRATE}
+\label{sec:tier0}
+
+Propositions~\ref{prop:prox}, \ref{prop:hj} and~\ref{prop:tight}, Corollary~\ref{cor:time}, Remark~\ref{rem:consistency} and Section~\ref{sec:backward}, with PIRATE as the worked instance: the regularizer PIRATE minimizes is the Hamilton--Jacobi value function of the prior on registration fields, with the training noise level as time; the part of the prior its denoiser can reveal is the backward viscosity solution $t\Jbvs$; and the recoverable part has curvature at least $-1/t$, so the noise level sets how much of the prior's structure survives. No experiments, no data, no external dependencies. Write this whatever else happens: it gives the paper a current application, and it survives if every measurement below is cut.
+
+Citations: \code{proj-bib.bib} already contains Hu et al.\ (\code{hu2023plug}), Gribonval and Nikolova (\code{gribonval2020characterization}), Rockafellar and Wets (\code{rockafellar2009variational}), Esteve and Zuazua (\code{esteve2020inverse}), and the two papers of ours this section builds on (\code{darbon2021bayesian}, \code{darbon2021connecting}). New additions are Reehorst and Schniter, and Romano, Elad and Milanfar (the provenance of PIRATE's equation (11)). Those two change the positioning argument, so do not add them silently.
+
+\subsection{Diagnosis: is PIRATE's denoiser a proximal operator?}
+\label{sec:tier1}
+
+Section~\ref{sec:identification} assumed $\D$ exact. It is a trained DnCNN. Reading \eqref{eq:pirate_iter} as descent on \eqref{eq:pirate_obj} requires $\phi\mapsto\phi-\D(\phi)$ to be a gradient field, and nothing in DnCNN's training enforces that. The PIRATE paper is silent on all of this: it contains no theorem and states no assumptions — the word ``convex'' does not appear in its body, only in the titles of its references — and it validates convergence empirically, by displaying iterates on one dataset. Its theoretical cover is implicit, through citations to the convergent plug-and-play literature, whose hypotheses (Lipschitz or nonexpansive denoisers, gradient-step or proximal denoisers) it never checks for its own network. So the gradient-field hypothesis is not merely unverified there; it is unstated. The measurements below test it. The theory resolves the question into three nested conditions on $\nabla\D(z)$:
+
+\begin{enumerate}[leftmargin=2em]
+\item \textbf{conservative}, $\nabla\D$ symmetric: by the Poincar\'e lemma, $\D$ is a gradient. If this fails, $\D$ is the gradient of nothing, \eqref{eq:pirate_obj} does not exist as written, and \eqref{eq:pirate_iter} is descent on no function;
+\item \textbf{proximal}, additionally $\nabla\D\succeq0$: $\D$ is the proximal operator of a possibly nonconvex regularizer, and $\psi$ is convex. This is what Section~\ref{sec:class} needs;
+\item \textbf{convex-proximal}, additionally $\nabla\D\preceq I$: the regularizer is convex. This is the stronger hypothesis \code{tv\_pm} relied on, where the network \emph{was} $\freg$.
+\end{enumerate}
+
+Two clarifications. First, the fidelity and smoothness terms of \eqref{eq:pirate_iter} are gradients by construction — they enter as $\nabla g$ and $\alpha\nabla r$ — so the denoiser residual $\tau(\phi - \D(\phi))$ is the only term whose gradient structure is a hypothesis rather than a fact; that is why all three conditions concern $\nabla\D$ alone. Second, nothing in this section, or anywhere in this document, adds constraint-enforcing terms to a training loss. The three conditions are measurements applied to PIRATE's published, frozen DnCNN; they cannot be imposed on someone else's weights, only tested. On our side the conditions are enforced by the architecture, exactly as \code{thm:char\_prox} prescribes: Section~\ref{sec:tier2} trains an input-convex $G_\theta$, so the induced denoiser $\prox_{J_\theta} = \nabla G_\theta^*$ has Jacobian $\nabla^2 G_\theta^*$, symmetric and positive semidefinite by construction — conditions 1 and 2 hold automatically, and condition 3 holds if and only if the readout $J_\theta$ is convex, which is the \code{tv\_pm} special case.
+
+Measuring conditions 2 and 3 on $\D$ determines which class the denoiser itself lies in, hence which parametrization the recovery needs, so that choice is made by the experiment rather than by us.
+
+A third clarification, made explicit on 2026-07-31: for a \emph{trained} denoiser, $\freg$ is defined by the characterization from the operator alone --- if $\D = \nabla\psi$ with $\psi$ convex (conditions 1 and 2), then $\freg := \psi^* - \tfrac12\|\cdot\|^2$ is the function whose proximal map $\D$ is, with no probabilistic reading attached. No prior $p$ with $\D = \mathbb{E}[\phi \mid z]$ need exist, and for a network fine-tuned through a task objective none does; the Tweedie identities of Section~\ref{sec:identification} are the special case where $\D$ is a posterior mean, and only in that case is $\freg = t\Jbvs$ the backward solution of a flow started at an actual prior. Any $1$-semiconvex $\freg$ is nonetheless a valid time-$t$ backward viscosity solution --- the semiconvexity estimate is the only constraint the backward flow imposes --- so the equation's structure applies to the recovered object with or without an underlying $J$.
+
+All three follow from Jacobian-vector and vector-Jacobian products, which automatic differentiation supplies without forming the Jacobian. For asymmetry, with $v$ standard Gaussian, $\E\|\nabla\D v - \nabla\D^\top v\|^2 = 2\|\nabla\D\|_F^2 - 2\langle\nabla\D,\nabla\D^\top\rangle$; report
+\[
+\rho \;:=\; \frac{\|\nabla\D - \nabla\D^\top\|_F}{2\|\nabla\D\|_F} \;=\; \frac{\|K\|_F}{\sqrt{\|S\|_F^2+\|K\|_F^2}} \;\in\;[0,1],
+\]
+where $\nabla\D = S+K$ splits into symmetric and skew parts. The divisor is $2\|\nabla\D\|_F$, not $\sqrt2\|\nabla\D\|_F$, since $\|\nabla\D-\nabla\D^\top\|_F = 2\|K\|_F$; the latter would range over $[0,\sqrt2]$ and not be a fraction. For the spectral conditions, estimate the extreme eigenvalues of $S$ by a few Lanczos steps on the same products, and report the fraction of test points violating each bound with the size of the violation.
+
+\paragraph{Calibration.} Run the estimator first where the answer is known by theorem: the total-variation posterior-mean denoiser of \code{tv\_pm} satisfies all three conditions, and an analytically defined denoiser with a non-log-concave prior, such as the mixture of Section~\ref{sec:verif_class}, satisfies the first two and fails the third. A diagnostic that reproduces both rows and then reports PIRATE's denoiser is calibrated; one applied cold is not, and its output could be an artifact of the probe size or the test distribution.
+
+\paragraph{The differential measurement.} PIRATE's denoiser is trained only for minimum mean squared error, so Proposition~\ref{prop:prox} applies to it in the ideal limit. PIRATE+ fine-tunes that same network on a task loss, after which it estimates nothing and the identification is broken by construction. Both exist in the same work, same architecture, same data, and PIRATE+ scores better. Measuring the three conditions before and after fine-tuning is a controlled comparison rather than an absolute number, and asks what the plug-and-play literature has not: does task-specific fine-tuning move a denoiser off the set of proximal operators, and by how much? If it does while improving accuracy, that is a real tension between the variational reading and task performance. This is the cheapest informative experiment here.
+
+\subsection{Competition: doing PIRATE's task with the recovered regularizer}
+\label{sec:tier2}
+
+This part has three stages: recover the regularizer, compare against PIRATE on the registration task itself, and replace their ten-network grid search with a single recovery (Section~\ref{sec:anneal}).
+
+\paragraph{Recovery.} The data are pairs $(z_k,\D(z_k))$ with $z_k$ drawn as in the denoiser's training distribution. These are forward passes, so the sampling cost that dominated \code{tv\_pm} vanishes; the binding constraint is access to $\D$ and to representative fields.
+
+One network, $G_\theta$, trained by gradient supervision on \eqref{eq:target}, with $J_\theta = G_\theta - \tfrac12\|\cdot\|^2$. Registration fields are three-dimensional vector fields, so the convolutional network of \code{tvpm/icnn.py} needs \code{Conv2d} replaced by \code{Conv3d} with three input channels, in a new file; the convexity gate must then be re-run and pass before any result is believed. Shift invariance is what lets a network trained on field patches be evaluated on a whole field. Fitting $\psi_\theta$ as well is optional and off the critical path; it buys the energy $-\sigma^2\log p_z$, which is of independent interest.
+
+\paragraph{Scoring.} There is no ground truth for $\freg$ when $\D$ is someone's trained network. Both certificates are computable from $G_\theta$ alone. At $y_k = \D(z_k)$ the prox residual is
+\[
+\frac{\|\nabla J_\theta(y_k) - (z_k-y_k)\|}{\|z_k-y_k\|} \;=\; \frac{\|\nabla G_\theta(y_k) - z_k\|}{\|z_k-y_k\|},
+\]
+which is exactly what \code{tv\_pm} reports, so the numbers stay comparable; the Fenchel--Young gap $G_\theta(y_k)+G_\theta^*(z_k)-\langle z_k,y_k\rangle\ge0$ costs one inner solve, since $G_\theta^*(z) = \langle z,\hat y\rangle - G_\theta(\hat y)$ at $\hat y = \prox_{J_\theta}(z)$. The demonstration that matters is the one that carried \code{tv\_pm}: $\prox_{J_\theta}(z)\approx\D(z)$ on held-out fields, reported as relative $L^2$ error first. By Proposition~\ref{prop:tight} that proximal subproblem is convex even though $J_\theta$ is not.
+
+\paragraph{Two routes.} \emph{Route A} uses PIRATE's pretrained denoiser, so everything refers to the published method. The weights are released (checked 2026-07-30; see the revised setup of Section~\ref{sec:exp2}), so Route A is viable for the diagnosis of Section~\ref{sec:tier1}; a training corpus of registration fields still needs NODEO or an equivalent, since the release ships a single example field. \emph{Route B}, recommended as primary, specifies a prior over deformation fields ourselves, samples it, trains a small minimum mean squared error denoiser, and recovers. Route B buys ground truth for $\freg$, cannot be blocked by someone else's release policy, and can be run in two dimensions first. Do Route B first and Route A as the demonstration on the real object; this mirrors the split the project already has between \code{posterior\_mean\_l1} and \code{tv\_pm}, and it makes a Route-A failure diagnosable rather than ambiguous between our method and their network.
+
+\paragraph{The comparison.} Once $\prox_{J_\theta}$ reproduces $\D$ on held-out fields, run the same registration problems twice: PIRATE's iteration \eqref{eq:pirate_iter} with the DnCNN in the loop, and minimization of $g + \alpha r + \tau J_\theta$ with the explicit regularizer, reporting the registration metrics of \code{hu2023plug} and the running time. At equal $\sigma$ the two should perform alike, since $\prox_{J_\theta} = \D$ is the design criterion; parity is the intended outcome. What the explicit objective adds at parity: convergence can be proved rather than observed, the objective value can be monitored across iterations, and the prior over registration fields is available as a function, not only through its denoiser. An accuracy gain, if one appears, is incidental and should not be claimed.
+
+Be precise about what ``convergence can be proved'' means. The objective is nonconvex regardless of the regularizer — the fidelity $g$ is a normalized cross-correlation, nonconvex in $\phi$ — and $J_\theta$ is $1$-semiconvex, not convex. The provable statement is convergence of proximal-gradient-type schemes to \emph{stationary points}: each proximal subproblem is convex by Proposition~\ref{prop:tight}, $J_\theta$ is weakly convex, and $g$ is smooth, which is the setting of the nonconvex composite-minimization literature. It is not global optimality, and PIRATE's paper — which assumes nothing and proves nothing about convergence, validating it by experiment — should not be criticized for lacking a guarantee we then overstate. \toverify{To verify before citing (GPL): the precise stationarity-convergence references for smooth nonconvex $+$ weakly convex composite objectives with a convex proximal subproblem. Candidates: Attouch, Bolte and Svaiter, Math.\ Program.\ 137 (2013); Bolte, Sabach and Teboulle, Math.\ Program.\ 146 (2014); Hurault, Leclaire and Papadakis, ICML 2022 (proximal denoiser with nonconvex regularization; cited by PIRATE itself as its ref.\ [32]). Check the exact hypotheses — Kurdyka--\L{}ojasiewicz requirements, step-size conditions, and whether weak convexity of the regularizer suffices as stated.}
+
+\subsection{One trained network in place of ten}
+\label{sec:anneal}
+
+PIRATE commits to one point on the flow, selected by training ten networks and grid-searching. A single recovery generates a family instead. The recovered prior is $\Jbvs = \freg/t$. By the semigroup property of inf-convolution,
+\begin{equation}
+\label{eq:semigroup}
+e_{t'}\Jbvs \;=\; e_{t'-t}\big(e_t \Jbvs\big), \qquad t'\ge t, \qquad e_\lambda f(x) := \min_u\big\{f(u) + \tfrac{1}{2\lambda}\|x-u\|^2\big\},
+\end{equation}
+and $e_t\Jbvs$ is in hand exactly: $e_t\Jbvs = e_1(\freg)/t = h/t$. (The initial datum here is $\Jbvs$, not the true $J$ — Section~\ref{sec:backward} is precisely the statement that the two differ, and $h/t = S_\epsilon(\cdot,t)$ is the viscous value function of $J$, not its inviscid envelope.) Each $t'$ gives a smoothing strength and hence a proximal operator, with no further training, and annealing $t'$ downward toward $t$ across the iterations of \eqref{eq:pirate_iter} is the natural coarse-to-fine schedule once the family is known to be a flow rather than ten unrelated networks. Three precisions:
+
+\begin{enumerate}[leftmargin=2em]
+\item \eqref{eq:semigroup} runs forward only. The information below $t$ is absent from the denoiser, so the schedule anneals down to the observed noise level and stops.
+\item Rescaling the recovered regularizer is a different operation. The family $\prox_{\lambda\freg}$ agrees with the true one only insofar as $\freg = tJ$, which Section~\ref{sec:backward} shows is what fails; and since $\freg$ is $1$-semiconvex, $\lambda\freg+\tfrac12\|\cdot\|^2$ is guaranteed convex only for $\lambda\le1$, so the rescaled subproblem need not even be well posed in the wanted direction. Use \eqref{eq:semigroup}.
+\item The family from \eqref{eq:semigroup} is the \emph{inviscid} flow. Regenerating the viscous $S_\epsilon(\cdot,t')$ needs $p_z$, hence the optional $\psi_\theta$.
+\end{enumerate}
+
+\section{The two experiments}
+\label{sec:experiments}
+
+Two experiments carry the program's measurable content. The first requires nothing external and can be produced immediately; the second requires PIRATE's released weights, in hand since 2026-07-30 (\code{numerics/ext/pirate/}). The first also supplies one of the second's calibration rows, so the order is not arbitrary.
+
+\subsection{Experiment 1: the mixture figure}
+\label{sec:exp1}
+
+\emph{Purpose.} Display, in the one setting where the true prior is known exactly, the two results that constrain every plug-and-play method built on a minimum mean squared error denoiser: the information loss of Section~\ref{sec:backward} and the necessity of the semiconvex class of Section~\ref{sec:class}. Its outcome is guaranteed by Propositions~\ref{prop:prox} and~\ref{prop:tight}, so it is a figure for the paper and a test of the implementation, not a hypothesis test.
+
+\emph{Setup.} The prior of Section~\ref{sec:verif_class}: $p_\phi = \tfrac12\mathcal{N}(-2,\nu) + \tfrac12\mathcal{N}(2,\nu)$ with $\nu = 0.05$, not log-concave; $\epsilon = 1$, $t = \sigma^2$. Everything is exact: $J = -\log p_\phi$, the denoiser $\D = \nabla\psi$ in closed form, $S_\epsilon(\cdot,t)$, and hence $\Jbvs$ on a dense grid. The closed forms are in \code{\_\_tasks/semiconvex\_check.py}; extend that script rather than starting over.
+
+\emph{Procedure.} Draw pairs $(x_k, y_k)$ with $x_k \sim p_z$ and $y_k = \D(x_k)$. Train two small networks on the gradient target \eqref{eq:target}, $\nabla G_\theta(y_k) = x_k$: (a) a plain input-convex network representing the regularizer directly, the convex class of \code{tv\_pm}; (b) the readout \eqref{eq:param}, $J_\theta = G_\theta - \tfrac12\|\cdot\|^2$. Plot four curves on one axis: $tJ$, the exact $\freg = t\Jbvs$, and the two fits; optionally a second panel at $\sigma/2$.
+
+\emph{Deliverable and reading.} One figure. The gap between $tJ$ and $t\Jbvs$ is \code{thm:prior\_optimality} made visible: the denoiser is blind below the proximal hull, and the curvature of $\Jbvs$ is floored at $-1/t$ while the minimum curvature of $J$ is near $-1580$ at $\nu = 0.05$. The convex fit must fail between the modes, where the target's curvature is $-0.911$ at $\sigma = 0.5$; the semiconvex fit must land on $\freg$. Report, next to the fits, the held-out prox residual and the true relative $L^2$ error. The first run (2026-07-29, \code{pnp\_reg/DESIGN.md}) measured the relation between them: the residual understates the value error by roughly an order of magnitude (0.9\% against 8.9\% at $\sigma = 0.5$), because the residual lives on the sampled range of $\D$ while the value error includes regions the operating distribution rarely visits. That ratio is the calibration to carry into Section~\ref{sec:tier2}, where the residual is the only score available.
+
+\emph{Cost.} Minutes on one CPU; no data beyond what the script samples itself.
+
+\subsection{Experiment 2: the PIRATE/PIRATE+ diagnosis}
+\label{sec:exp2}
+
+\emph{Purpose.} Test the hypothesis PIRATE uses without stating (Section~\ref{sec:tier1}): that its trained denoiser is a proximal operator, so that the objective its paper writes down exists. The differential question is the sharpest part: does PIRATE+'s task fine-tuning move the denoiser off the proximal set while improving registration accuracy? This is the falsifiable experiment; either outcome is a result.
+
+\emph{Setup (revised 2026-07-30; the weights question of Section~\ref{sec:first} is answered and the experiment is unblocked).} The official repository (\code{wustl-cig/PIRATE-code}, MIT license, commit \code{4901b71}) is cloned verbatim at \code{numerics/ext/pirate/}, with provenance recorded in \code{ext/PROVENANCE.md}. It ships \emph{one} AWGN denoiser checkpoint, not the ten this document assumed: a six-convolution three-dimensional DnCNN (453{,}059 parameters, ELU activations, no batch normalization) trained at configuration $\sigma = 1$ on OASIS-1 fields, together with the PIRATE+ network, which consists of the \emph{same} twelve tensors under a \code{PIRATE.dnn.} key prefix, moved only by the deep-equilibrium fine-tuning — so the differential comparison is exactly matched by construction. Three conventions, verified against their \code{train\_denoiser.py}: the network predicts the noise, so the denoiser is $\D(z) = z - \mathrm{dnn}(z)$ and the probe target is $\nabla\D = I - \nabla\mathrm{dnn}$; the training noise is $\sigma^2\,\mathcal{N}(0,I)$, that is, the noise \emph{standard deviation} equals $\sigma^2$ (equal to $1$ at $\sigma = 1$, but the convention matters for the time identification $t\epsilon = \sigma_{\mathrm{eff}}^2$); and the release contains one example registration field of shape $(1,3,80,96,112)$, about $2.6\times10^6$ components with standard deviation $1.88$, which fixes the operating distribution — test inputs are this field plus unit-variance Gaussian noise, exactly as in their training loop. Both checkpoints load in \code{lpn\_env} (\code{h5py} installed 2026-07-30). Measured on this machine: a forward pass costs 5.0~s on CPU and 1.3~s on MPS.
+
+\emph{Procedure.} At each test input, compute Jacobian-vector and vector-Jacobian products of $\D$ by automatic differentiation — no training, no Jacobian formed — and from them the asymmetry ratio $\rho$ and Lanczos estimates of the extreme eigenvalues of the symmetric part, exactly as specified in Section~\ref{sec:tier1}. Calibrate first on the two denoisers with known answers: the \code{tv\_pm} posterior-mean denoiser, which satisfies all three conditions, and Experiment 1's mixture denoiser, which satisfies the first two and fails the third. One implementation fact found on 2026-07-30: the \code{tv\_pm} posterior-mean denoiser is produced by a Gibbs sampler, which automatic differentiation cannot traverse, so its calibration row must run on a differentiable stand-in with the same known answers. Two candidates exist in the codebase: the exact $n = 2$ quadrature denoiser of \code{tvpm/quadrature.py}, whose $2\times2$ Jacobian follows from high-accuracy finite differences of a spectrally convergent quadrature and which satisfies all three conditions by theorem; and \code{tv\_pm}'s trained convex-ICNN proximal operator, differentiated implicitly through the solve via $\nabla\hat u(x) = (I + \nabla^2 J_\theta(\hat u))^{-1}$, which satisfies all three by architecture. Record the choice in \code{pnp\_reg/DESIGN.md} when made. Report the Monte Carlo variance with every estimate.
+
+\emph{Deliverable and reading.} One table: three calibration rows (the coordinatewise mixture denoiser with a designed condition-3 violation, the exact $n = 2$ quadrature posterior mean, and the \code{tv\_pm} input-convex prox in float64 with a float32 repeat) plus a symmetric-surrogate floor row, one PIRATE row (the single released checkpoint, $\sigma = 1$), and one PIRATE+ row; columns $\rho$, $\lambda_{\min}(S)$, $\lambda_{\max}(S)$, with the fraction and size of violations. A $\sigma$-ladder is possible only by retraining their denoiser ourselves with their own script on the released field (measured: 4.5~s per step on MPS, so about 30 minutes per $\sigma$; 29.7~s per step on CPU); if run, those rows must be labeled as our retraining, not as their published denoisers. Read the table by the three conditions of Section~\ref{sec:tier1}: $\rho \approx 0$ and $\lambda_{\min} \geq 0$ mean a possibly nonconvex $\freg$ exists and the recovery of Section~\ref{sec:tier2} targets it; $\lambda_{\max} \leq 1$ in addition means $\freg$ is convex and the \code{tv\_pm} class suffices; $\rho$ large means no regularizer exists, and the correct output is Sections~\ref{sec:tier0} and~\ref{sec:tier1} as a negative result. The PIRATE+ row against the PIRATE row is the controlled comparison of Section~\ref{sec:tier1}, and with a single released $\sigma$ it is the sharpest content the released weights support.
+
+\emph{Cost.} Forward and backward passes only; with a forward pass at 5.0~s on CPU and 1.3~s on MPS, the full table is minutes per row for the calibration and about ten minutes per test point for the full-field rows.
+
+\emph{Result (run 2026-07-30; implementation \code{numerics/pnp\_reg/pnpreg/probe*.py}, executed notebook \code{experiment2\_probe.ipynb}, per-point numbers and gate records in \code{results/probe\_metrics.json}).} All 191 calibration gates passed; the resolvable-asymmetry floor is $1.1 \times 10^{-8}$. At eight operating-distribution test points per network (the released field plus unit-variance noise):
+\begin{center}
+\small
+\begin{tabular}{lcccc}
+row & $\rho$ & $\lambda_{\min}(S)$ & $\lambda_{\max}(S)$ & violations \\
+PIRATE ($\sigma = 1$) & $0.4440$--$0.4443$ & $-0.72$ & $1.14$ & conditions 1, 2, 3 all fail at every point \\
+PIRATE+ & $0.0156$ & $+0.946$ & $1.053$ & condition 2 passes; condition 3 fails by $5\%$ \\
+\end{tabular}
+\end{center}
+Reading, by the three conditions of Section~\ref{sec:tier1}: the released AWGN denoiser is the gradient of nothing --- no regularizer with $\prox_{\freg} = \D$ exists, and \eqref{eq:pirate_obj} does not exist as written for the method's own denoiser; per the kill criteria this is reported as a negative result about the hypothesis, not softened. The differential question of Section~\ref{sec:tier1} is answered in the direction OPPOSITE to the one posed: deep-equilibrium fine-tuning moved the denoiser toward the proximal set, not off it --- $28\times$ closer to symmetric, symmetric part positive definite at every point, only the convex bound violated, with $\mathrm{spec}(S) \subset [0.95, 1.05]$ (a near-identity map). PIRATE+'s implicit regularizer therefore approximately exists, is nonconvex, and lies in the $1$-semiconvex class of Section~\ref{sec:class}; the recovery of Section~\ref{sec:tier2} applies to it, and for the AWGN denoiser a fit returns only the proximal operator nearest to $\D$, with the held-out residual measuring the distance to the class. A CPU cross-check on bitwise-identical inputs reproduces $\rho$ to $10^{-4}$; discussion and follow-up proposal: \code{\_\_notes/note\_experiments\_summary.tex}.
+
+\section{Risks and kill criteria}
+\label{sec:risk}
+
+\paragraph{The risk to state first, not last.} At the same $\sigma$, plugging $\freg$ back into \eqref{eq:pirate_obj} reproduces PIRATE, because $\prox_{\freg}$ \emph{is} $\D$. A reader sees this immediately, so we should say it in the first paragraph. The value of the understanding, diagnosis and recovery parts is not a better algorithm at fixed $\sigma$: it is an explicit prior over deformation fields, which nobody has; an explicit objective, so that convergence becomes something to prove rather than something to observe (to stationary points, not global minima — see the comparison paragraph of Section~\ref{sec:tier2}); and the quantitative account in Section~\ref{sec:backward} of what the denoiser cannot say. Only the family of Section~\ref{sec:anneal} claims an algorithmic gain, and it should stay the only one.
+
+\paragraph{Dimension.} Fields at half resolution still have on the order of $10^6$ components. The convolutional network handles this by shift invariance, but every diagnostic in Section~\ref{sec:tier1} is a Monte Carlo estimate whose variance must be reported, and the Lanczos estimates need enough iterations to mean anything at that size.
+
+\paragraph{Kill criteria, decided now.}
+\begin{itemize}
+\item \textbf{The diagnostic misses its calibration rows.} The estimator or its probe size is wrong. A number from an uncalibrated estimator is worthless.
+\item \textbf{Asymmetry at the level of the probe noise.} Report the noise floor with the estimate: ``we could not detect asymmetry'' is not ``there is none'', and the difference matters because a null result here is a positive result for the theory.
+\item \textbf{Asymmetry large.} Then $\D$ is not a gradient field and no regularizer with $\prox_{\freg} = \D$ exists. The recovery of Section~\ref{sec:tier2} still runs — the architecture always produces an exact proximal operator, so the fit returns the proximal operator nearest to $\D$ in the training metric, and the held-out residual then measures exactly the distance of $\D$ from the proximal class. But the recovered $J_\theta$ is then a proximal surrogate of $\D$, not its regularizer, and the correct output is Sections~\ref{sec:tier0} and~\ref{sec:tier1} as a negative result about the hypothesis PIRATE's own analysis rests on. Report it as such; do not soften it.
+\item \textbf{Route B recovers its own known prior poorly.} The failure is ours and must be fixed before Route A, where nothing could separate our failure from the denoiser's.
+\item \textbf{$\prox_{J_\theta}$ does not reproduce $\D$ on held-out fields.} Report the certificates and stop. Do not proceed to registration experiments, where a bad prior and a bad algorithm are indistinguishable.
+\end{itemize}
+
+\section{First step, for whoever picks this up}
+\label{sec:first}
+
+\subsection{Organization (revised 2026-07-29: the \texttt{tv\_pm} freeze is lifted)}
+
+The earlier constraint — no file in \code{tv\_pm} may be edited — was lifted on 2026-07-29, and the repository was reorganized accordingly (\code{changes.txt} C16): shared, experiment-agnostic machinery lives in \code{numerics/src/} — the gradient-supervision loop and its helpers in \code{src/gradfit.py}, the input-convex networks in \code{src/network.py} and \code{src/conv\_icnn.py} — and each experiment is a sibling directory (\code{tv\_pm/}, \code{pnp\_reg/}) that imports from \code{src/} only. By Section~\ref{sec:class}, the network trained under \eqref{eq:param} is an ordinary input-convex network; only the target array differs, and the quadratic enters at readout, so no new training code is needed anywhere.
+
+\code{numerics/pnp\_reg/} exists and follows the \code{tv\_pm} layout: a package (\code{pnpreg/}), \code{tests/}, \code{results/} (tracked), \code{README.md}, \code{DESIGN.md} recording decisions and retractions as they are made, and one executed notebook as the entry point. Experiment 1 of Section~\ref{sec:experiments} is implemented there (\code{pnpreg/mixture.py}, \code{pnpreg/readout.py}, \code{pnpreg/experiment.py}); its figure and metrics are in \code{pnp\_reg/results/}.
+
+\subsection{Step 1a: the semiconvex readout, checked against a known answer}
+
+In \code{tv\_pm} the target $\freg$ is convex, and every convex function is $1$-semiconvex, so the true answer lies in the class \eqref{eq:param} too. What changes is the function the network represents: $G_\theta = \freg + \tfrac12\|\cdot\|^2$ rather than $\freg$. Both are convex here, so an input-convex network is legitimate either way, and the run answers one question only: is the new one as easy to fit? Because nothing is replaced, this is a true A/B with the original intact as the reference.
+
+Write, in the new package:
+\begin{enumerate}[leftmargin=2em]
+\item \textbf{A run script} that calls \code{tvpm.dataset.ensure} and \code{src.gradfit.train\_grad} exactly as \code{tvpm.recover.run} does, but passes \code{u.target(xtr)} in place of \code{u.target(gtr)}, per \eqref{eq:target}. Nothing in \code{tvpm} changes; the difference is which array is handed in.
+\item \textbf{A readout module} of a few lines: $J_\theta(y) = \widetilde G_\theta(z(y)) - \tfrac12\|y\|^2$ with $z(y) = (y-\mu)/s$, and $\nabla_y J_\theta(y) = \nabla_z\widetilde G_\theta(z(y))/s - y$.
+\item \textbf{A scoring function} using that readout, reporting the residual of Section~\ref{sec:tier2} and the correlation of $J_\theta$ with total variation.
+\end{enumerate}
+
+Write the chain rule down before coding it and test it: the standardization acts on $\widetilde G$'s argument and the quadratic does not, and getting this wrong yields a plausible network wrong by a linear term. A finite-difference check of $\nabla_y J_\theta$ against autograd at a handful of random $y$ suffices.
+
+\emph{Gate.} Run the production configuration on \code{tv\_pm}'s cached data,
+\begin{center}
+\code{--arch fc --standardize --beta 20 --steps 250000}.
+\end{center}
+The held-out residual must land at or below the published reference with $\mathrm{corr}(J,\mathrm{TV})$ near $0.99$; the reference is $10.69\%$ as of this writing, but \code{tv\_pm} is being rerun at the $\sigma = t = 20/256$ pair, so gate against the current \code{results/metrics.csv} rather than this constant. A materially worse number means the extra freedom costs optimization rather than buying expressivity, which is worth knowing and worth recording in \code{changes.txt} before going further.
+
+\subsection{Step 1b: show the new class reaches what the old one cannot}
+
+Take the one-dimensional separated mixture of Section~\ref{sec:verif_class}, where $\freg$ is known exactly on a grid and is nonconvex. Fit it twice from gradient targets alone: once with a plain input-convex network, the old parametrization, and once with \eqref{eq:param}. The first cannot represent the target and must fail in the multimodal region; the second must succeed. Plot both against the exact $\freg$.
+
+The outcome here is not in doubt — Proposition~\ref{prop:tight} guarantees it, so this is a test of the implementation and a figure for the paper, not an experiment. It is small and self-contained, it is the visual argument for Section~\ref{sec:class}, and it can go in the paper. Experiment 1 of Section~\ref{sec:experiments} extends exactly this into the paper figure, adding the $tJ$ and $t\Jbvs$ curves. The script behind every number in Sections~\ref{sec:verif_class} and~\ref{sec:backward} ships with this document as \code{\_\_tasks/semiconvex\_check.py} and already supplies the exact $\freg$, the exact $\D$, the backward solution and the grid. Extend it rather than starting over.
+
+\subsection{Step 1c: only then, choose a route}
+
+Two questions, both answerable by reading rather than computing — both \textbf{answered 2026-07-30}:
+\begin{enumerate}[leftmargin=2em]
+\item Are PIRATE's denoiser weights publicly released, and at which $\sigma$? This decides Route A against Route B. \textbf{Answer: yes}, at \code{wustl-cig/PIRATE-code} (MIT), but at a single configuration $\sigma = 1$ rather than ten, together with the PIRATE+ network; cloned at \code{numerics/ext/pirate/}. Route A is therefore viable for Experiment 2 as revised in Section~\ref{sec:exp2}; Route B remains primary for the recovery of Section~\ref{sec:tier2}, since the release ships one example field, not a training corpus.
+\item Taking $\epsilon=1$, so $t=\sigma^2$: how large is their $\sigma$ relative to the scale of the fields, and what does the curvature bound $-1/t$ then amount to? This decides whether the information-loss statement is a footnote or a headline, and it is arithmetic, not an experiment. \textbf{Answer:} their code adds noise of standard deviation $\sigma^2$, so the released denoiser operates at $\sigma_{\mathrm{eff}} = 1$ against a field whose standard deviation is $1.88$ — noise at $53\%$ of the field scale — giving $t = \sigma_{\mathrm{eff}}^2 = 1$ and a curvature floor of $-1$ in field units. Noise of that relative size makes the proximal-hull gap a first-order effect: the information-loss statement is a headline, not a footnote.
+\end{enumerate}
+
+Record both in \code{DESIGN.md} with the date, as decisions rather than notes (done 2026-07-30). The project's convention is that decisions are written when made and retracted explicitly when wrong, and both of these have already moved once in this document's short history.
+
+\paragraph{Environment.}
+\begin{itemize}[leftmargin=2em]
+\item The interpreter is \code{\~{}/miniforge3/\allowbreak envs/\allowbreak lpn\_env/\allowbreak bin/\allowbreak python}; the system \code{python3} has no PyTorch. The environment has PyTorch, NumPy and SciPy, and not scikit-image or scikit-learn.
+\item \code{src/plotting.py} and \code{src/diagnostics.py} call \code{matplotlib.use("Agg")} at import time, so a notebook must select its backend \emph{after} importing from \code{src}, or every figure comes out empty with only a warning.
+\end{itemize}
+
+\end{document}
