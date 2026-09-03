@@ -6,15 +6,15 @@ axes -- "is there a recovery step?" and "which class is J in?" -- and leaves the
 folder unable to say where the semiconvexity comes from. Adding the third method
 separates them:
 
-  LPN Iterative recovery   psi_theta fitted (grad psi(x_k) = y_k), then
-                           J_1(y) = <y,w> - psi(w) - 0.5 y^2 with grad psi(w) = y.
-                           An INVERSION per query point (1-D: monotone bisection).
-                           Class: psi* is convex, so J_1 is 1-SEMICONVEX for free.
-  One-shot recovery        G_theta ~ psi_theta* on conjugate pairs made from
-                           psi_theta, J_2 = G - 0.5 y^2. One forward pass.
-                           Class: 1-SEMICONVEX, same reason.
-  Direct fit               J_theta a plain ICNN, grad J(y_k) = x_k - y_k.
-                           Class: CONVEX. Does not contain a nonconvex f_reg.
+  Iterative     psi_theta fitted (grad psi(x_k) = y_k), then
+                J_1(y) = <y,w> - psi(w) - 0.5 y^2 with grad psi(w) = y.
+                An INVERSION per query point (1-D: monotone bisection).
+                Class: psi* is convex, so J_1 is 1-SEMICONVEX for free.
+  Two-network   G_theta ~ psi_theta* on conjugate pairs made from
+                psi_theta, J_2 = G - 0.5 y^2. One forward pass.
+                Class: 1-SEMICONVEX, same reason.
+  Direct fit    J_theta a plain ICNN, grad J(y_k) = x_k - y_k.
+                Class: CONVEX. Does not contain a nonconvex f_reg.
 
 THE POINT. The -0.5||.||^2 in the first two is not a trick of the one-shot route:
 it falls out of the Fenchel formula that BOTH LPN routes share. So semiconvexity is
@@ -40,6 +40,7 @@ from src.gradfit import net_grad, net_value, train_grad
 from src.network import LPN
 
 CFG = dict(hidden=64, layers=2, beta=20, batch=512, steps=20_000, seed=1)
+
 HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT = os.path.join(HERE, "results")
 
@@ -61,7 +62,7 @@ def invert_psi(psi_net, y, lo=-40.0, hi=40.0, iters=80):
 
     In 1-D the inversion is EXACT to machine precision and costs nothing, which is
     deliberate: it removes the optimizer from the comparison, so any gap between
-    LPN Iterative recovery and One-shot recovery here is the recovery MATHEMATICS,
+    Iterative and Two-network here is the recovery MATHEMATICS,
     not a solver artifact. (At field dimension the same step is the expensive,
     alpha-dependent solve that tv_pm/prior_routes measures.)
     """
@@ -109,7 +110,7 @@ def run(sigma=0.5, steps=None, smoke=False):
     psi_net, val_psi = fit(x, y, xv, yv, steps)
     t_psi = time.time() - t0
 
-    # --- One-shot: G ~ psi_theta*, on pairs MADE FROM psi_theta -------------
+    # --- Two-network: G ~ psi_theta*, on pairs MADE FROM psi_theta -------------
     # inputs are psi_theta's own outputs, not the exact denoiser's, so G is the
     # conjugate of the LEARNED psi -- the definition tv_pm/prior_routes uses.
     yh = net_grad(psi_net, col(x)).ravel()
@@ -146,8 +147,8 @@ def run(sigma=0.5, steps=None, smoke=False):
     ex_c = demean(exact, m)
     rows = []
     for name, f, r, t_tr, t_ev, cls in [
-        ("LPN Iterative recovery", f_it, r_it, t_psi, t_eval_it, "1-semiconvex"),
-        ("One-shot recovery", f_os, r_os, t_psi + t_G, t_eval_os, "1-semiconvex"),
+        ("Iterative", f_it, r_it, t_psi, t_eval_it, "1-semiconvex"),
+        ("Two-network", f_os, r_os, t_psi + t_G, t_eval_os, "1-semiconvex"),
         ("Direct fit", f_dr, r_dr, t_Jd, t_eval_dr, "convex"),
     ]:
         fc = demean(f, m)
@@ -185,8 +186,8 @@ def run(sigma=0.5, steps=None, smoke=False):
     gm = g[m]
     fig, ax = plt.subplots(1, 2, figsize=(12, 4.4))
     ax[0].plot(gm, demean(exact, m)[m], "k-", lw=2.5, label="exact  $f_{reg}=t\\,J_{BVS}$")
-    for (name, f), c, ls in zip([("LPN Iterative recovery", f_it),
-                                 ("One-shot recovery", f_os),
+    for (name, f), c, ls in zip([("Iterative", f_it),
+                                 ("Two-network", f_os),
                                  ("Direct fit", f_dr)],
                                 ["#4C6EF5", "#F59F00", "#2F9E44"], ["--", "-.", ":"]):
         ax[0].plot(gm, demean(f, m)[m], ls, lw=2, color=c, label=name)
@@ -199,8 +200,8 @@ def run(sigma=0.5, steps=None, smoke=False):
     d2 = lambda f: (f[::k][2:] - 2 * f[::k][1:-1] + f[::k][:-2]) / (gc[1] - gc[0]) ** 2
     xx = gc[1:-1][mc[1:-1]]
     ax[1].plot(xx, d2(exact)[mc[1:-1]], "k-", lw=2.5, label="exact")
-    for (name, f), c, ls in zip([("LPN Iterative recovery", f_it),
-                                 ("One-shot recovery", f_os),
+    for (name, f), c, ls in zip([("Iterative", f_it),
+                                 ("Two-network", f_os),
                                  ("Direct fit", f_dr)],
                                 ["#4C6EF5", "#F59F00", "#2F9E44"], ["--", "-.", ":"]):
         ax[1].plot(xx, d2(f)[mc[1:-1]], ls, lw=2, color=c, label=name)
@@ -208,7 +209,7 @@ def run(sigma=0.5, steps=None, smoke=False):
     ax[1].axhline(-1, color="#E03131", ls="--", lw=1.5)
     ax[1].text(gm[0], -1 + 0.06, "semiconvexity floor $-1$", color="#E03131")
     ax[1].set_xlabel("$y$"); ax[1].set_ylabel("curvature  $f_{reg}''$")
-    ax[1].set_title("Curvature: only the convex class cannot go below 0")
+    ax[1].set_title("Curvature")
     ax[1].set_ylim(-1.35, 1.2); ax[1].legend(); ax[1].grid(alpha=0.3)
 
     fig.suptitle(f"Three recoveries of a NONCONVEX prior  —  1-D mixture, "

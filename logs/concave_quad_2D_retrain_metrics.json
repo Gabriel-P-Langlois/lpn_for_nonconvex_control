@@ -1,0 +1,56 @@
+{
+  "name": "concave_quad_2D_retrain",
+  "dim": 2,
+  "hidden": 256,
+  "query_halfwidth": 4.0,
+  "train_halfwidth": 4.0,
+  "preimage_bound": 2.0,
+  "n_train": 30000,
+  "steps": 250000,
+  "invert_alphas": [
+    0.0,
+    0.1
+  ],
+  "invert_alpha_best": 0.0,
+  "route1_rmse_per_alpha": {
+    "0.0": 0.0023215884437014144,
+    "0.1": 0.009710950982039713
+  },
+  "route1_diverged_per_alpha": {
+    "0.0": false,
+    "0.1": false
+  },
+  "route1_all_alphas_diverged": false,
+  "psi_val_mse": 2.496309434718569e-06,
+  "G_val_mse": 5.37243795406539e-06,
+  "prior_rmse_route1": 0.0023215884437014144,
+  "prior_rmse_route2": 0.003361566981052395,
+  "route1_preimage_excess": 0.9795311689376831,
+  "route2_preimage_excess": 1.0017093420028687,
+  "route1_median_prox_residual": 0.0008401984071312325,
+  "route2_median_prox_residual": 0.006904275513428515,
+  "route1_median_fy_gap": 0.00045808060545926566,
+  "route2_median_fy_gap": 0.00038705779183367817,
+  "route1_max_preimage_linf": 1.9590623378753662,
+  "route2_max_preimage_linf": 2.0034186840057373,
+  "route2_yk_reach": 8.024369239807129,
+  "route2_frac_query_uncovered": 0.0,
+  "route1_diagnostic": {
+    "rmse": 0.0023215884437014144,
+    "median_prox_residual": 0.0008401984071312325,
+    "p90_prox_residual": 0.012533158063859566,
+    "median_fy_gap": 0.00045808060545926566,
+    "max_preimage_linf": 1.9590623378753662,
+    "n_points": 1000
+  },
+  "route2_diagnostic": {
+    "rmse": 0.003361566981052395,
+    "median_prox_residual": 0.006904275513428515,
+    "p90_prox_residual": 0.021573288374619665,
+    "median_fy_gap": 0.00038705779183367817,
+    "max_preimage_linf": 2.0034186840057373,
+    "n_points": 1000
+  },
+  "min_inner_weight": 0.0,
+  "plot": "/Users/oluwatosin/Downloads/GL/lpn_for_nonconvex_control/logs/concave_quad_2D_retrain_cross_sections.png"
+}

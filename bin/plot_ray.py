@@ -72,7 +72,7 @@ def ray_points(dim, a=4.0, spacing=160):
 
 def figure_for(family, dims, ckpt, out):
     make_problem, pretty = FAMILIES[family]
-    fig, axes = plt.subplots(2, len(dims), figsize=(3.4 * len(dims), 6.6))
+    fig, axes = plt.subplots(2, len(dims), figsize=(12, 5.6))
     if len(dims) == 1:
         axes = axes.reshape(2, 1)
 

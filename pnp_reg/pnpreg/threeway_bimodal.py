@@ -8,27 +8,27 @@ between the two admissible routes is decided by the inversion's conditioning:
                       | f_reg CONVEX            | f_reg NONCONVEX
     ------------------+-------------------------+--------------------------
     1-D, exact        |  --                     | Exp 1: Iterative 0.02%
-    inversion         |                         | beats One-shot 1.22%
+    inversion         |                         | beats Two-network 1.22%
     ------------------+-------------------------+--------------------------
     64-D, iterative   | TV: Direct 8.07% wins,  | THIS RUN
     solver            | Iterative 14.48% worst  |
 
 METHODS (Experiment 3.2's data, network, budget and scoring, unchanged):
 
-  LPN Iterative recovery   psi_theta fitted (grad psi(z_k) = y_k), then
-                           J_1(y) = <y,w> - psi(w) - 0.5||y||^2, grad psi(w) = y,
-                           w by src.invert.invert_cvx_gd -- the SAME Adam
-                           inverter, lr and alpha tv_pm uses. An inversion per
-                           query point. Class: 1-SEMICONVEX for free, because
-                           psi* is convex and the -0.5||.||^2 is in the Fenchel
-                           formula.
-  One-shot recovery        G_theta ~ psi*, trained on (y_k, z_k) with y_k the
-                           DENOISER's own output, J_2 = G - 0.5||y||^2. One
-                           forward pass. Class: 1-SEMICONVEX, same reason.
-                           This is Experiment 3.2's fit (a).
-  Direct fit               plain ICNN, grad J(y_k) = z_k - y_k. Experiment 3.2's
-                           fit (b), the convex control. Class: CONVEX -- it does
-                           not contain a nonconvex f_reg.
+  Iterative     psi_theta fitted (grad psi(z_k) = y_k), then
+                J_1(y) = <y,w> - psi(w) - 0.5||y||^2, grad psi(w) = y,
+                w by src.invert.invert_cvx_gd -- the SAME Adam
+                inverter, lr and alpha tv_pm uses. An inversion per
+                query point. Class: 1-SEMICONVEX for free, because
+                psi* is convex and the -0.5||.||^2 is in the Fenchel
+                formula.
+  Two-network   G_theta ~ psi*, trained on (y_k, z_k) with y_k the
+                DENOISER's own output, J_2 = G - 0.5||y||^2. One
+                forward pass. Class: 1-SEMICONVEX, same reason.
+                This is Experiment 3.2's fit (a).
+  Direct fit    plain ICNN, grad J(y_k) = z_k - y_k. Experiment 3.2's
+                fit (b), the convex control. Class: CONVEX -- it does
+                not contain a nonconvex f_reg.
 
 ANCHORING. G is trained on the denoiser's own outputs y_k = D(z_k), which ARE
 the training data. Manufacturing G's inputs from psi_theta instead -- the literal
@@ -36,7 +36,7 @@ reading of bin/_run.py's conjugate-sampling step, which had no denoiser data to
 anchor on -- costs a factor of 19 in value error at n = 64 (measured 2026-08):
 psi_theta's error enters through the conjugate and accumulates as a systematic
 value offset while the gradients stay fine. Data-anchoring is free and strictly
-better, so it is what "One-shot recovery" means here and in tv_pm/prior_routes.
+better, so it is what "Two-network" means here and in tv_pm/prior_routes.
 
 Everything is scored against the closed-form backward viscosity solution in
 bimodal.py, on the operating support, exactly as bimodal_run.py does.
@@ -59,6 +59,7 @@ from src.invert import invert_cvx_gd
 HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT = os.path.join(HERE, "results")
 CKPT = os.path.join(OUT, "ckpt")
+
 
 INVERT_ITERS = 20_000
 INVERT_LR = 1e-2          # pinned by the inversion's own certificate, as in tv_pm
@@ -224,9 +225,9 @@ def run(sigma=0.5, steps=None, batch=None, smoke=False, force=False):
         return (y * w).sum(axis=1) - pw - 0.5 * (y ** 2).sum(axis=1)
 
     methods = [
-        ("LPN Iterative recovery", val_it,
+        ("Iterative", val_it,
          lambda y: preimage(psi_w, y) - np.asarray(y), "1-semiconvex", "inversion/query"),
-        ("One-shot recovery", lambda y: br.value_J(G, G_u, y, "a"),
+        ("Two-network", lambda y: br.value_J(G, G_u, y, "a"),
          lambda y: br.grad_G(G, G_u, y) - np.asarray(y), "1-semiconvex", "forward"),
         ("Direct fit", lambda y: br.value_J(Jd, Jd_u, y, "b"),
          lambda y: br.grad_G(Jd, Jd_u, y), "convex", "forward"),
@@ -291,7 +292,7 @@ def run(sigma=0.5, steps=None, batch=None, smoke=False, force=False):
         _apply_style()
     except Exception as e:
         print(f"  [plotstyle unavailable: {e}]")
-    colors = {"LPN Iterative recovery": "#4C6EF5", "One-shot recovery": "#F59F00",
+    colors = {"Iterative": "#4C6EF5", "Two-network": "#F59F00",
               "Direct fit": "#2F9E44"}
     fig, ax = plt.subplots(1, 2, figsize=(12, 4.4))
     dm = lambda v: v - v.mean()
@@ -304,7 +305,7 @@ def run(sigma=0.5, steps=None, batch=None, smoke=False, force=False):
     e = dm(ex_uv)
     ax[0].set_ylim(e.min() - 1.5, e.max() + 1.5)
     ax[0].set_xlabel("$s=\\langle u,y\\rangle$"); ax[0].set_ylabel("$f_{reg}$ (centred)")
-    ax[0].set_title("Along the NONCONVEX direction $u$  (axis clipped to the exact range)")
+    ax[0].set_title("Along the NONCONVEX direction $u$")
     ax[0].legend(); ax[0].grid(alpha=0.3)
 
     d2 = lambda v: br.curvature_on_slice(v, s_grid[1] - s_grid[0], 4)
@@ -315,7 +316,7 @@ def run(sigma=0.5, steps=None, batch=None, smoke=False, force=False):
     ax[1].axhline(0, color="#868E96", lw=1)
     ax[1].axhline(-1, color="#E03131", ls="--", lw=1.5)
     ax[1].set_ylim(-1.4, 1.4); ax[1].set_xlabel("$s$"); ax[1].set_ylabel("curvature")
-    ax[1].set_title("Only the convex class cannot go below 0")
+    ax[1].set_title("Curvature")
     ax[1].legend(); ax[1].grid(alpha=0.3)
     fig.suptitle(f"Bimodal field prior, $n=64$, $\\sigma={sigma}$, all nets {steps} steps — "
                  f"a NONCONVEX prior at field dimension")

@@ -31,7 +31,7 @@ def plot_cross_sections(
     """Overlay learned vs true convex potential and prior along two axes.
 
     The prior panel shows BOTH recoveries against the reference when ``model_G`` is
-    given. Showing only One-shot recovery (the old behaviour) made the plots useless for
+    given. Showing only Two-network recovery (the old behaviour) made the plots useless for
     the one comparison they exist to support.
     """
     xi, p1, p2 = cross_section_points(a, spacing, dim)
@@ -55,7 +55,7 @@ def plot_cross_sections(
                        label=rf"Iterative (inversion, $\alpha$={alpha:g})")
         if model_G is not None:
             r2 = evaluate_learned_prior_G(pts, model_G)
-            axs[1][j].plot(xi, r2, "-", lw=1.5, alpha=0.85, label="One-shot ($G$)")
+            axs[1][j].plot(xi, r2, "-", lw=1.5, alpha=0.85, label="Two-network ($G$)")
         axs[1][j].set_title(f"Recovered prior, axis {j + 1}, dim {dim}")
         axs[1][j].set_xlabel(f"$x_{j + 1}$")
         axs[1][j].legend(); axs[1][j].grid(True, alpha=0.3)
